@@ -1,0 +1,4 @@
+user: root
+password: password
+url: ds050739.mlab.com:50739
+db: gops
