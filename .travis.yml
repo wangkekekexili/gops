@@ -1,6 +1,11 @@
 language: go
-
 go:
-  - 1.6
-  - 1.7
-
+- 1.6
+- 1.7
+deploy:
+  provider: heroku
+  api_key:
+    secure: N+AM3HR9cM2nX3/LthfEYp6gWBIvz0M0CoVgVlsnDQP5JYhfQ7t4+UMxFlMJKI4br1TSrjmaEBHFfpXsoAEjGEC4NRz2bH9iekaeRg8Nl5cmPNd0Dd0ysf0ffuJqeJxSsjOPcaVkENCv29wnvoOh5pJro0xRuHviOLLf0Aumcrjt3I4H1Zq7ytdjzbJcUU9umup+ITAzY72HwUNYTVBLM15w+DT7Udu9telLtuTmlA8XZ0rLLCFRTkTd4C/Y/K4z7ceQQ9ZEQ2KypRdHUksCh8oiP9SqgxbcZCBe0ryX60qehn3bRNpbVFB+oYdIEsGYdVJGOko9p3fDq6JSStomFLD1LwoMluZbHGjrjWpl4KPMXPYxP7uVxYazP1xGlo06ZeTMC3kn55Tq9d10OybEJC82Fs3Tjx77pzgPjjAy8X4MVenVsEj2Q1kkPQ6FfhU0hjssD67dcFkcnlY5sg6WS+zs8GzcDuio9uiIsh4a0BwRSHgYeckanlcB4sSx89XpQXxg1SeQ6A8GkSkSLyGoE+ihvofGaI8MPm81j7LkO/GF9Ed4BgCBzyT8ay2TnBUkFfk9EhCj3ud2kewjA8I59dqooKejPGR7QswHLsd1qO43DssoM2/dhOxMPj7M5j0qa8y+JBpqcT3HT2JrwlV0VTQ3lHKxX04Sg/Q9Pq1RNQU=
+  app: ke-gops
+  on:
+    repo: wangkekekexili/gops
