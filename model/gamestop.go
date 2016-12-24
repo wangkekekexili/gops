@@ -105,7 +105,7 @@ func (gamestop *Gamestop) GetGamesInfo(c *mgo.Collection) ([]interface{}, map[bs
 	gamesToUpdate := make(map[bson.ObjectId]interface{})
 
 	for _, game := range gamesByName {
-		if game.ID.String() == "" {
+		if game.ID.Hex() == "" {
 			gamesToInsert = append(gamesToInsert, game)
 		} else {
 			gamesToUpdate[game.ID] = game
