@@ -9,7 +9,7 @@ type mongodbConfig struct {
 	DB       string `yaml:"db"`
 }
 
-func BuildURI() (string, error) {
+func BuildMongodbURI() (string, error) {
 	config := mongodbConfig{}
 	if err := getConfig("mongodb.yaml", &config); err != nil {
 		return "", err
