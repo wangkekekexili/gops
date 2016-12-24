@@ -28,6 +28,3 @@ _testmain.go
 
 # Intellij
 .idea
-
-# Project Specific
-./config
