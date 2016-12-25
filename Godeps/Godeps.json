@@ -3,7 +3,7 @@
 	"GoVersion": "go1.7",
 	"GodepVersion": "v62",
 	"Packages": [
-		"./cmd/"
+		"./"
 	],
 	"Deps": [
 		{
