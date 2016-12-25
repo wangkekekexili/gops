@@ -1,6 +1,5 @@
 language: go
 go:
-- 1.6
 - 1.7
 deploy:
   provider: heroku
@@ -9,3 +8,4 @@ deploy:
   app: ke-gops
   on:
     repo: wangkekekexili/gops
+    branch: master
