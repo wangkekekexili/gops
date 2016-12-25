@@ -36,7 +36,9 @@ func main() {
 	if len(gamesToInsert) > 0 {
 		logger.Info("Inserting documents.", zap.Int("number", len(gamesToInsert)))
 		if err = c.Insert(gamesToInsert...); err != nil {
-			logger.Warn("Unable to insert games.")
+			logger.Warn("Unable to insert games.",
+				zap.String("err", err.Error()),
+			)
 		}
 	}
 	if len(gamesToUpdate) > 0 {
