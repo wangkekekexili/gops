@@ -3,7 +3,7 @@
 	"GoVersion": "go1.7",
 	"GodepVersion": "v62",
 	"Packages": [
-		"./"
+		"."
 	],
 	"Deps": [
 		{
@@ -14,6 +14,15 @@
 		{
 			"ImportPath": "github.com/andybalholm/cascadia",
 			"Rev": "1c31af6f6c1a7b101ed05aacc7d8a738b43ae86e"
+		},
+		{
+			"ImportPath": "github.com/uber-go/atomic",
+			"Comment": "v1.0.0-7-g3b8db5e",
+			"Rev": "3b8db5e93c4c02efbc313e17b2e796b0914a01fb"
+		},
+		{
+			"ImportPath": "github.com/uber-go/zap",
+			"Rev": "a5783ee4b216a927da8f839c45cfbf9d694e1467"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html",
