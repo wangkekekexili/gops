@@ -92,6 +92,11 @@ func (gamestop *Gamestop) GetGamesInfo(c *mgo.Collection) ([]interface{}, map[bs
 		condition := result.Condition
 		if gameNewPricePoint, ok := gamesByName[name]; ok {
 			if gameNewPricePoint.Condition == condition {
+				// Skip if the price is not changed.
+				if result.PriceHistory[len(result.PriceHistory)-1].Price == gameNewPricePoint.PriceHistory[0].Price {
+					delete(gamesByName, name)
+					continue
+				}
 				// Make a copy of result.
 				gameToUpdate := result
 				gameToUpdate.PriceHistory = append(gameToUpdate.PriceHistory, gameNewPricePoint.PriceHistory[0])
