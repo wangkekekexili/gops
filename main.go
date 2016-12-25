@@ -17,7 +17,7 @@ func main() {
 		logger.Fatal("Cannot build MongoDB URI.", zap.String("err", err.Error()))
 		return
 	}
-	logger.Info("Connecting to MongoDB", zap.String("uri", uri))
+	logger.Info("Connecting to MongoDB.", zap.String("uri", uri))
 	session, err := mgo.Dial(uri)
 	if err != nil {
 		logger.Fatal("Cannot connect to MongoDB.", zap.String("err", err.Error()))
