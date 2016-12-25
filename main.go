@@ -14,12 +14,13 @@ func main() {
 	// Connect to mlab mongodb.
 	uri, err := util.BuildMongodbURI()
 	if err != nil {
-		logger.Fatal("Cannot build MongoDB URI.", zap.String("message", err.Error()))
+		logger.Fatal("Cannot build MongoDB URI.", zap.String("err", err.Error()))
 		return
 	}
+	logger.Info("Connecting to MongoDB", zap.String("uri", uri))
 	session, err := mgo.Dial(uri)
 	if err != nil {
-		logger.Fatal("Cannot connect to MongoDB.", zap.String("message", err.Error()))
+		logger.Fatal("Cannot connect to MongoDB.", zap.String("err", err.Error()))
 	}
 	defer session.Close()
 
@@ -27,7 +28,10 @@ func main() {
 	gamestop := &gops.Gamestop{}
 	gamesToInsert, gamesToUpdate, err := gamestop.GetGamesInfo(c)
 	if err != nil {
-		logger.Error("Unable to get games info.", zap.String("source", gops.ProductSourceGamestop))
+		logger.Error("Unable to get games info.",
+			zap.String("source", gops.ProductSourceGamestop),
+			zap.String("err", err.Error()),
+		)
 	}
 	if len(gamesToInsert) > 0 {
 		logger.Info("Inserting documents.", zap.Int("number", len(gamesToInsert)))

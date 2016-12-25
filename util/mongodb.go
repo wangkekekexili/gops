@@ -1,6 +1,9 @@
 package util
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 type mongodbConfig struct {
 	User     string `yaml:"user"`
@@ -11,8 +14,12 @@ type mongodbConfig struct {
 
 func BuildMongodbURI() (string, error) {
 	config := mongodbConfig{}
-	if err := getConfig("mongodb.yaml", &config); err != nil {
-		return "", err
+
+	// Try building the URI from config file.
+	if err := getConfig("mongodb.yaml", &config); err == nil {
+		return fmt.Sprintf("mongodb://%s:%s@%s/%s", config.User, config.Password, config.URL, config.DB), nil
 	}
-	return fmt.Sprintf("mongodb://%s:%s@%s/%s", config.User, config.Password, config.URL, config.DB), nil
+
+	// Try building the URI from environment variables.
+	return os.Getenv("mongodb_uri"), nil
 }
