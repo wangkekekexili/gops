@@ -119,3 +119,7 @@ func (gamestop *Gamestop) GetGamesInfo(c *mgo.Collection) ([]interface{}, map[bs
 
 	return gamesToInsert, gamesToUpdate, nil
 }
+
+func (gamestop *Gamestop) GetSource() string {
+	return ProductSourceGamestop
+}

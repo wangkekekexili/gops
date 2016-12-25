@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"encoding/json"
+	"sync"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -11,6 +12,19 @@ import (
 
 type GameFetcher interface {
 	GetGamesInfo(*mgo.Collection) ([]interface{}, map[bson.ObjectId]interface{}, error)
+	GetSource() string
+}
+
+var allGameFetchers []GameFetcher
+var allGameFetchersInit sync.Once
+
+func GetAllGameFetchers() []GameFetcher {
+	allGameFetchersInit.Do(func() {
+		allGameFetchers = []GameFetcher{
+			&Gamestop{},
+		}
+	})
+	return allGameFetchers
 }
 
 type PricePoint struct {
