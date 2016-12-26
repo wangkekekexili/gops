@@ -1,3 +1,7 @@
+# Project Specific
+test.go
+gops
+
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
 *.a

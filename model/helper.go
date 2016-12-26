@@ -22,6 +22,7 @@ func GetAllGameFetchers() []GameFetcher {
 	allGameFetchersInit.Do(func() {
 		allGameFetchers = []GameFetcher{
 			&Gamestop{},
+			&Target{},
 		}
 	})
 	return allGameFetchers

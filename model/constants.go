@@ -5,4 +5,5 @@ const (
 	ProductConditionPreowned = "pre-owned"
 
 	ProductSourceGamestop = "gamestop"
+	ProductSourceTarget   = "target"
 )
