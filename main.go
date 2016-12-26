@@ -5,6 +5,7 @@ import (
 	"github.com/wangkekekexili/gops/model"
 	"github.com/wangkekekexili/gops/util"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 func main() {
@@ -29,13 +30,50 @@ func main() {
 		logger.Info("Handler starts.",
 			zap.String("source", handler.GetSource()),
 		)
-		gamesToInsert, gamesToUpdate, err := handler.GetGamesInfo(c)
+		gameNames, gamesByNameAndCondition, err := handler.GetGamesInfo(c)
 		if err != nil {
 			logger.Error("Unable to get games info.",
 				zap.String("source", gops.ProductSourceGamestop),
 				zap.String("err", err.Error()),
 			)
 		}
+
+		// Get existing documents and see if we need to update them.
+		namesSubQuery := make([]bson.M, len(gameNames))
+		for i, gameName := range gameNames {
+			namesSubQuery[i] = bson.M{"name": gameName}
+		}
+		cursor := c.Find(bson.M{"source": handler.GetSource(), "$or": namesSubQuery}).Iter()
+		var result gops.BasicGameInfo
+		for cursor.Next(&result) {
+			name := result.Name
+			condition := result.Condition
+			key := name + condition
+			if gameNewPricePoint, ok := gamesByNameAndCondition[key]; ok {
+				// Skip if the price is not changed.
+				if result.PriceHistory[len(result.PriceHistory)-1].Price == gameNewPricePoint.GetRecentPrice() {
+					delete(gamesByNameAndCondition, key)
+					continue
+				}
+				// Make a copy of result.
+				gameToUpdate := result
+				gameToUpdate.PriceHistory = append(gameToUpdate.PriceHistory, gameNewPricePoint.GetPriceHistory()[0])
+				gamesByNameAndCondition[key] = &gameToUpdate
+			}
+		}
+		cursor.Close()
+
+		var gamesToInsert []interface{}
+		gamesToUpdate := make(map[bson.ObjectId]interface{})
+
+		for _, game := range gamesByNameAndCondition {
+			if game.GetID().Hex() == "" {
+				gamesToInsert = append(gamesToInsert, game)
+			} else {
+				gamesToUpdate[game.GetID()] = game
+			}
+		}
+
 		if len(gamesToInsert) > 0 {
 			logger.Info("Inserting documents.", zap.Int("number", len(gamesToInsert)))
 			if err = c.Insert(gamesToInsert...); err != nil {

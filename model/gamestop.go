@@ -8,7 +8,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -33,9 +32,9 @@ type Gamestop struct{}
 
 var _ GameFetcher = &Gamestop{}
 
-func (gamestop *Gamestop) GetGamesInfo(c *mgo.Collection) ([]interface{}, map[bson.ObjectId]interface{}, error) {
+func (gamestop *Gamestop) GetGamesInfo(c *mgo.Collection) ([]string, map[string]BasicGameInfoI, error) {
 	t := time.Now()
-	gamesByName := make(map[string]*GamestopGame)
+	gamesByNameAndCondition := make(map[string]BasicGameInfoI)
 	var gameNames []string
 	startIndex := 0
 	for {
@@ -71,7 +70,7 @@ func (gamestop *Gamestop) GetGamesInfo(c *mgo.Collection) ([]interface{}, map[bs
 				return
 			}
 			gameNames = append(gameNames, name)
-			gamesByName[name] = NewGamestopGame(brand, condition, name, price, t)
+			gamesByNameAndCondition[name+condition] = NewGamestopGame(brand, condition, name, price, t)
 		})
 		if numProduct == 0 {
 			break
@@ -80,44 +79,7 @@ func (gamestop *Gamestop) GetGamesInfo(c *mgo.Collection) ([]interface{}, map[bs
 		time.Sleep(time.Second)
 	}
 
-	// Get existing documents and see if we need to update them.
-	namesSubQuery := make([]bson.M, len(gameNames))
-	for i, gameName := range gameNames {
-		namesSubQuery[i] = bson.M{"name": gameName}
-	}
-	cursor := c.Find(bson.M{"source": ProductSourceGamestop, "$or": namesSubQuery}).Iter()
-	var result GamestopGame
-	for cursor.Next(&result) {
-		name := result.Name
-		condition := result.Condition
-		if gameNewPricePoint, ok := gamesByName[name]; ok {
-			if gameNewPricePoint.Condition == condition {
-				// Skip if the price is not changed.
-				if result.PriceHistory[len(result.PriceHistory)-1].Price == gameNewPricePoint.PriceHistory[0].Price {
-					delete(gamesByName, name)
-					continue
-				}
-				// Make a copy of result.
-				gameToUpdate := result
-				gameToUpdate.PriceHistory = append(gameToUpdate.PriceHistory, gameNewPricePoint.PriceHistory[0])
-				gamesByName[name] = &gameToUpdate
-			}
-		}
-	}
-	cursor.Close()
-
-	var gamesToInsert []interface{}
-	gamesToUpdate := make(map[bson.ObjectId]interface{})
-
-	for _, game := range gamesByName {
-		if game.ID.Hex() == "" {
-			gamesToInsert = append(gamesToInsert, game)
-		} else {
-			gamesToUpdate[game.ID] = game
-		}
-	}
-
-	return gamesToInsert, gamesToUpdate, nil
+	return gameNames, gamesByNameAndCondition, nil
 }
 
 func (gamestop *Gamestop) GetSource() string {

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -47,7 +46,7 @@ var _ GameFetcher = &Target{}
 type targetSearchResponse struct {
 }
 
-func (target *Target) GetGamesInfo(c *mgo.Collection) ([]interface{}, map[bson.ObjectId]interface{}, error) {
+func (target *Target) GetGamesInfo(c *mgo.Collection) ([]string, map[string]BasicGameInfoI, error) {
 	t := time.Now()
 
 	httpResponse, err := http.Get(targetURL)
@@ -66,7 +65,7 @@ func (target *Target) GetGamesInfo(c *mgo.Collection) ([]interface{}, map[bson.O
 	}
 	gameItems := searchResponse["search_response"].(map[string]interface{})["items"].(map[string]interface{})["Item"].([]interface{})
 
-	gamesByName := make(map[string]*TargetGame)
+	gamesByNameAndCondition := make(map[string]BasicGameInfoI)
 	var gameNames []string
 	for _, gameInfoInterface := range gameItems {
 		gameInfo := gameInfoInterface.(map[string]interface{})
@@ -78,43 +77,10 @@ func (target *Target) GetGamesInfo(c *mgo.Collection) ([]interface{}, map[bson.O
 		dpci := gameInfo["dpci"].(string)
 		tcin := gameInfo["tcin"].(string)
 		upc := gameInfo["upc"].(string)
-		gamesByName[name] = NewTargetGame(brand, ProductConditionNew, name, price, t, dpci, tcin, upc)
-	}
-	// Get existing documents and see if we need to update them.
-	namesSubQuery := make([]bson.M, len(gameNames))
-	for i, gameName := range gameNames {
-		namesSubQuery[i] = bson.M{"name": gameName}
-	}
-	cursor := c.Find(bson.M{"source": ProductSourceTarget, "$or": namesSubQuery}).Iter()
-	var result TargetGame
-	for cursor.Next(&result) {
-		name := result.Name
-		if gameNewPricePoint, ok := gamesByName[name]; ok {
-			// Skip if the price is not changed.
-			if result.PriceHistory[len(result.PriceHistory)-1].Price == gameNewPricePoint.PriceHistory[0].Price {
-				delete(gamesByName, name)
-				continue
-			}
-			// Make a copy of result.
-			gameToUpdate := result
-			gameToUpdate.PriceHistory = append(gameToUpdate.PriceHistory, gameNewPricePoint.PriceHistory[0])
-			gamesByName[name] = &gameToUpdate
-		}
-	}
-	cursor.Close()
-
-	var gamesToInsert []interface{}
-	gamesToUpdate := make(map[bson.ObjectId]interface{})
-
-	for _, game := range gamesByName {
-		if game.ID.Hex() == "" {
-			gamesToInsert = append(gamesToInsert, game)
-		} else {
-			gamesToUpdate[game.ID] = game
-		}
+		gamesByNameAndCondition[name+ProductConditionNew] = NewTargetGame(brand, ProductConditionNew, name, price, t, dpci, tcin, upc)
 	}
 
-	return gamesToInsert, gamesToUpdate, nil
+	return gameNames, gamesByNameAndCondition, nil
 }
 
 func (target *Target) GetSource() string {

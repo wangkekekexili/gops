@@ -11,7 +11,7 @@ import (
 )
 
 type GameFetcher interface {
-	GetGamesInfo(*mgo.Collection) ([]interface{}, map[bson.ObjectId]interface{}, error)
+	GetGamesInfo(*mgo.Collection) ([]string, map[string]BasicGameInfoI, error)
 	GetSource() string
 }
 
@@ -42,7 +42,41 @@ type BasicGameInfo struct {
 	Source       string        `bson:"source"`
 }
 
-func (info BasicGameInfo) String() string {
+var _ BasicGameInfoI = &BasicGameInfo{}
+
+func (info *BasicGameInfo) String() string {
 	bytes, _ := json.Marshal(&info)
 	return string(bytes)
+}
+
+func (info *BasicGameInfo) GetID() bson.ObjectId {
+	return info.ID
+}
+
+func (info *BasicGameInfo) GetCondition() string {
+	return info.Condition
+}
+
+func (info *BasicGameInfo) GetName() string {
+	return info.Name
+}
+
+func (info *BasicGameInfo) GetPriceHistory() []PricePoint {
+	return info.PriceHistory
+}
+
+func (info *BasicGameInfo) GetRecentPrice() float64 {
+	historyLen := len(info.PriceHistory)
+	if historyLen == 0 {
+		return 0
+	}
+	return info.PriceHistory[historyLen-1].Price
+}
+
+type BasicGameInfoI interface {
+	GetID() bson.ObjectId
+	GetCondition() string
+	GetName() string
+	GetPriceHistory() []PricePoint
+	GetRecentPrice() float64
 }
