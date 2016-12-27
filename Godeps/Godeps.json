@@ -16,6 +16,21 @@
 			"Rev": "1c31af6f6c1a7b101ed05aacc7d8a738b43ae86e"
 		},
 		{
+			"ImportPath": "github.com/sendgrid/rest",
+			"Comment": "v2.3.1",
+			"Rev": "3ec51b4f1754e13e92409355851a0a82e9a06461"
+		},
+		{
+			"ImportPath": "github.com/sendgrid/sendgrid-go",
+			"Comment": "v3.3.1-1-gd087004",
+			"Rev": "d087004b4d47c2a378ade9eb3957571114b91493"
+		},
+		{
+			"ImportPath": "github.com/sendgrid/sendgrid-go/helpers/mail",
+			"Comment": "v3.3.1-1-gd087004",
+			"Rev": "d087004b4d47c2a378ade9eb3957571114b91493"
+		},
+		{
 			"ImportPath": "github.com/uber-go/atomic",
 			"Comment": "v1.0.0-7-g3b8db5e",
 			"Rev": "3b8db5e93c4c02efbc313e17b2e796b0914a01fb"
