@@ -23,12 +23,12 @@ type TargetGame struct {
 	UPC           string `bson:"upc"`
 }
 
-func NewTargetGame(brand string, condition string, name string, price float64, t time.Time,
+func NewTargetGame(brand string, name string, price float64, t time.Time,
 	dpci, tcin, upc string) *TargetGame {
 	return &TargetGame{
 		BasicGameInfo: BasicGameInfo{
 			Brand:        brand,
-			Condition:    condition,
+			Condition:    ProductConditionNew,
 			Name:         name,
 			PriceHistory: []PricePoint{{Price: price, Timestamp: t}},
 			Source:       ProductSourceTarget,
@@ -42,9 +42,6 @@ func NewTargetGame(brand string, condition string, name string, price float64, t
 type Target struct{}
 
 var _ GameFetcher = &Target{}
-
-type targetSearchResponse struct {
-}
 
 func (target *Target) GetGamesInfo(c *mgo.Collection) ([]string, map[string]BasicGameInfoI, error) {
 	t := time.Now()
@@ -77,7 +74,7 @@ func (target *Target) GetGamesInfo(c *mgo.Collection) ([]string, map[string]Basi
 		dpci := gameInfo["dpci"].(string)
 		tcin := gameInfo["tcin"].(string)
 		upc := gameInfo["upc"].(string)
-		gamesByNameAndCondition[name+ProductConditionNew] = NewTargetGame(brand, ProductConditionNew, name, price, t, dpci, tcin, upc)
+		gamesByNameAndCondition[name+ProductConditionNew] = NewTargetGame(brand, name, price, t, dpci, tcin, upc)
 	}
 
 	return gameNames, gamesByNameAndCondition, nil

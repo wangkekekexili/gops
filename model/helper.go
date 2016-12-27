@@ -21,6 +21,7 @@ var allGameFetchersInit sync.Once
 func GetAllGameFetchers() []GameFetcher {
 	allGameFetchersInit.Do(func() {
 		allGameFetchers = []GameFetcher{
+			&Gamefly{},
 			&Gamestop{},
 			&Target{},
 		}
