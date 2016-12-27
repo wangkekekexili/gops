@@ -15,13 +15,16 @@ func main() {
 	// Connect to mlab mongodb.
 	uri, err := util.BuildMongodbURI()
 	if err != nil {
-		logger.Fatal("Cannot build MongoDB URI.", zap.String("err", err.Error()))
+		logger.Error("Cannot build MongoDB URI.", zap.String("err", err.Error()))
+		util.SendAlert()
 		return
 	}
 	logger.Info("Connecting to MongoDB.", zap.String("uri", uri))
 	session, err := mgo.Dial(uri)
 	if err != nil {
-		logger.Fatal("Cannot connect to MongoDB.", zap.String("err", err.Error()))
+		logger.Error("Cannot connect to MongoDB.", zap.String("err", err.Error()))
+		util.SendAlert()
+		return
 	}
 	defer session.Close()
 
@@ -36,6 +39,8 @@ func main() {
 				zap.String("source", gops.ProductSourceGamestop),
 				zap.String("err", err.Error()),
 			)
+			util.SendAlert()
+			continue
 		}
 
 		// Get existing documents and see if we need to update them.
@@ -80,6 +85,7 @@ func main() {
 				logger.Warn("Unable to insert games.",
 					zap.String("err", err.Error()),
 				)
+				util.SendAlert()
 			}
 		}
 		if len(gamesToUpdate) > 0 {
@@ -91,6 +97,7 @@ func main() {
 						zap.Object("game", game),
 					)
 				}
+				util.SendAlert()
 			}
 		}
 		logger.Info("Handler finishes.",
