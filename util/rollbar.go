@@ -15,7 +15,7 @@ var (
 
 func ReportError(err error) {
 	rollbarInit.Do(func() {
-		rollbarToken := strings.TrimSpace(os.Getenv("ROLLBAR_TOKEN"))
+		rollbarToken := strings.TrimSpace(os.Getenv("ROLLBAR_ACCESS_TOKEN"))
 		if rollbarToken == "" {
 			rollbarReady = false
 			return
