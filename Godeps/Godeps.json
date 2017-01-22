@@ -2,9 +2,6 @@
 	"ImportPath": "github.com/wangkekekexili/gops",
 	"GoVersion": "go1.7",
 	"GodepVersion": "v62",
-	"Packages": [
-		"."
-	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/PuerkitoBio/goquery",
@@ -16,19 +13,9 @@
 			"Rev": "1c31af6f6c1a7b101ed05aacc7d8a738b43ae86e"
 		},
 		{
-			"ImportPath": "github.com/sendgrid/rest",
-			"Comment": "v2.3.1",
-			"Rev": "3ec51b4f1754e13e92409355851a0a82e9a06461"
-		},
-		{
-			"ImportPath": "github.com/sendgrid/sendgrid-go",
-			"Comment": "v3.3.1-1-gd087004",
-			"Rev": "d087004b4d47c2a378ade9eb3957571114b91493"
-		},
-		{
-			"ImportPath": "github.com/sendgrid/sendgrid-go/helpers/mail",
-			"Comment": "v3.3.1-1-gd087004",
-			"Rev": "d087004b4d47c2a378ade9eb3957571114b91493"
+			"ImportPath": "github.com/stvp/rollbar",
+			"Comment": "v0.4.0-6-g3eb4713",
+			"Rev": "3eb4713e2655cd1be805795be31b3f85b74b05fd"
 		},
 		{
 			"ImportPath": "github.com/uber-go/atomic",

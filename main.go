@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/stvp/rollbar"
 	"github.com/uber-go/zap"
 	"github.com/wangkekekexili/gops/model"
 	"github.com/wangkekekexili/gops/util"
@@ -16,14 +17,14 @@ func main() {
 	uri, err := util.BuildMongodbURI()
 	if err != nil {
 		logger.Error("Cannot build MongoDB URI.", zap.String("err", err.Error()))
-		util.SendAlert()
+		util.ReportError(err)
 		return
 	}
 	logger.Info("Connecting to MongoDB.", zap.String("uri", uri))
 	session, err := mgo.Dial(uri)
 	if err != nil {
 		logger.Error("Cannot connect to MongoDB.", zap.String("err", err.Error()))
-		util.SendAlert()
+		util.ReportError(err)
 		return
 	}
 	defer session.Close()
@@ -39,7 +40,7 @@ func main() {
 				zap.String("source", gops.ProductSourceGamestop),
 				zap.String("err", err.Error()),
 			)
-			util.SendAlert()
+			util.ReportError(err)
 			continue
 		}
 
@@ -85,7 +86,7 @@ func main() {
 				logger.Warn("Unable to insert games.",
 					zap.String("err", err.Error()),
 				)
-				util.SendAlert()
+				util.ReportError(err)
 			}
 		}
 		if len(gamesToUpdate) > 0 {
@@ -96,12 +97,14 @@ func main() {
 						zap.String("id", objectID.Hex()),
 						zap.Object("game", game),
 					)
+					util.ReportError(err)
 				}
-				util.SendAlert()
 			}
 		}
 		logger.Info("Handler finishes.",
 			zap.String("source", handler.GetSource()),
 		)
 	}
+
+	rollbar.Wait()
 }
