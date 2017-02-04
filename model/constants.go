@@ -7,4 +7,5 @@ const (
 	ProductSourceGamefly  = "gamefly"
 	ProductSourceGamestop = "gamestop"
 	ProductSourceTarget   = "target"
+	ProductSourceWalmart  = "walmart"
 )

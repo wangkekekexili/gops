@@ -1,110 +1,160 @@
 package main
 
 import (
-	"github.com/stvp/rollbar"
+	"database/sql"
+	"fmt"
+	"os"
+	"strings"
+	"sync"
+
+	"github.com/getsentry/raven-go"
+	"github.com/go-gorp/gorp"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/uber-go/zap"
 	"github.com/wangkekekexili/gops/model"
 	"github.com/wangkekekexili/gops/util"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
+var (
+	dbMap *gorp.DbMap
+)
+
+func init() {
+	// Init error reporter.
+	sentryDSN := strings.TrimSpace(os.Getenv("SENTRY_DSN"))
+	if sentryDSN == "" {
+		util.LogError("error reporter cannot be initialized: SENTRY_DSN is unset")
+		os.Exit(1)
+	}
+	raven.SetDSN(sentryDSN)
+
+	// Check db connection.
+	var err error
+	var db *sql.DB
+	db, err = sql.Open("mysql", os.Getenv("MYSQL_DSN"))
+	if err != nil {
+		util.LogError(err.Error())
+		raven.CaptureErrorAndWait(err, nil)
+		os.Exit(1)
+	}
+	if err = db.Ping(); err != nil {
+		util.LogError(err.Error())
+		raven.CaptureErrorAndWait(err, nil)
+		os.Exit(1)
+	}
+
+	// Initialize dbMap.
+	dbMap = &gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{Engine: "innodb", Encoding: "ascii"}}
+	dbMap.AddTableWithName(gops.Game{}, "game")
+	dbMap.AddTableWithName(gops.Price{}, "price")
+}
+
 func main() {
-	// Config logger.
-	logger := zap.New(zap.NewJSONEncoder(zap.NoTime()))
-
-	// Connect to mlab mongodb.
-	uri, err := util.BuildMongodbURI()
-	if err != nil {
-		logger.Error("Cannot build MongoDB URI.", zap.String("err", err.Error()))
-		util.ReportError(err)
-		return
-	}
-	logger.Info("Connecting to MongoDB.", zap.String("uri", uri))
-	session, err := mgo.Dial(uri)
-	if err != nil {
-		logger.Error("Cannot connect to MongoDB.", zap.String("err", err.Error()))
-		util.ReportError(err)
-		return
-	}
-	defer session.Close()
-
-	c := session.DB("gops").C("gops")
-	for _, handler := range gops.GetAllGameFetchers() {
-		logger.Info("Handler starts.",
-			zap.String("source", handler.GetSource()),
-		)
-		gameNames, gamesByNameAndCondition, err := handler.GetGamesInfo(c)
-		if err != nil {
-			logger.Error("Unable to get games info.",
-				zap.String("source", gops.ProductSourceGamestop),
-				zap.String("err", err.Error()),
-			)
-			util.ReportError(err)
-			continue
+	defer func() {
+		if r := recover(); r != nil {
+			err := fmt.Errorf("panic captured: %v", r)
+			util.LogError(err.Error())
+			raven.CaptureError(err, nil)
 		}
-
-		// Get existing documents and see if we need to update them.
-		namesSubQuery := make([]bson.M, len(gameNames))
-		for i, gameName := range gameNames {
-			namesSubQuery[i] = bson.M{"name": gameName}
+		if err := dbMap.Db.Close(); err != nil {
+			util.LogError(err.Error())
+			raven.CaptureError(err, nil, nil)
 		}
-		cursor := c.Find(bson.M{"source": handler.GetSource(), "$or": namesSubQuery}).Iter()
-		var result gops.BasicGameInfo
-		for cursor.Next(&result) {
-			name := result.Name
-			condition := result.Condition
-			key := name + condition
-			if gameNewPricePoint, ok := gamesByNameAndCondition[key]; ok {
-				// Skip if the price is not changed.
-				if result.PriceHistory[len(result.PriceHistory)-1].Price == gameNewPricePoint.GetRecentPrice() {
-					delete(gamesByNameAndCondition, key)
-					continue
+		raven.Wait()
+	}()
+
+	var wg sync.WaitGroup
+	for _, handler := range gops.AllGameHandlers {
+		wg.Add(1)
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					err := fmt.Errorf("panic captured: %v", r)
+					util.LogError(err.Error())
+					raven.CaptureError(err, nil)
 				}
-				// Make a copy of result.
-				gameToUpdate := result
-				gameToUpdate.PriceHistory = append(gameToUpdate.PriceHistory, gameNewPricePoint.GetPriceHistory()[0])
-				gamesByNameAndCondition[key] = &gameToUpdate
+				wg.Done()
+			}()
+			if err := handleGames(handler); err != nil {
+				util.LogError(err.Error(), zap.String("source", handler.GetSource()))
+				raven.CaptureError(err, nil, nil)
 			}
-		}
-		cursor.Close()
+		}()
+	}
+	wg.Wait()
+}
 
-		var gamesToInsert []interface{}
-		gamesToUpdate := make(map[bson.ObjectId]interface{})
+func handleGames(handler gops.GameHandler) error {
+	util.LogInfo("start processing", zap.String("source", handler.GetSource()))
 
-		for _, game := range gamesByNameAndCondition {
-			if game.GetID().Hex() == "" {
-				gamesToInsert = append(gamesToInsert, game)
-			} else {
-				gamesToUpdate[game.GetID()] = game
-			}
-		}
-
-		if len(gamesToInsert) > 0 {
-			logger.Info("Inserting documents.", zap.Int("number", len(gamesToInsert)))
-			if err = c.Insert(gamesToInsert...); err != nil {
-				logger.Warn("Unable to insert games.",
-					zap.String("err", err.Error()),
-				)
-				util.ReportError(err)
-			}
-		}
-		if len(gamesToUpdate) > 0 {
-			logger.Info("Updating documents.", zap.Int("number", len(gamesToUpdate)))
-			for objectID, game := range gamesToUpdate {
-				if err = c.UpdateId(objectID, game); err != nil {
-					logger.Warn("Unable to update a document.",
-						zap.String("id", objectID.Hex()),
-						zap.Object("game", game),
-					)
-					util.ReportError(err)
-				}
-			}
-		}
-		logger.Info("Handler finishes.",
-			zap.String("source", handler.GetSource()),
-		)
+	gamesWithPrice, err := handler.GetGames()
+	if err != nil {
+		return err
+	}
+	util.LogInfo("successfully get games",
+		zap.String("source", handler.GetSource()),
+		zap.Int("game_count", len(gamesWithPrice)),
+	)
+	if len(gamesWithPrice) == 0 {
+		return nil
+	}
+	var gameNames []interface{}
+	for _, entry := range gamesWithPrice {
+		gameNames = append(gameNames, entry.Game.Name)
 	}
 
-	rollbar.Wait()
+	// Get existing games.
+	var existingGames []gops.Game
+	if _, err := dbMap.Select(&existingGames, `SELECT * FROM game WHERE name IN `+util.QuestionMarks(len(gameNames)), gameNames...); err != nil {
+		return err
+	}
+	existingGamesByKey := make(map[string]*gops.Game)
+	for i, game := range existingGames {
+		existingGamesByKey[game.GetKey()] = &existingGames[i]
+	}
+
+	var numNewGames, numPriceUpdate int
+	for _, gameWithPrice := range gamesWithPrice {
+		game := gameWithPrice.Game
+		price := gameWithPrice.Price
+		// Check if the game has an existing entry.
+		if existingGame, hasExistingEntry := existingGamesByKey[game.GetKey()]; hasExistingEntry {
+			// Get the last price for the game.
+			lastPrice, err := dbMap.SelectFloat(`SELECT value FROM price WHERE game_id = ? ORDER BY timestamp desc`, existingGame.ID)
+			if err != nil {
+				return err
+			}
+			if price.Value == lastPrice {
+				continue
+			}
+
+			// New price point.
+			numPriceUpdate++
+			price.GameID = existingGame.ID
+			if err = dbMap.Insert(price); err != nil {
+				return err
+			}
+		} else {
+			// It's new game.
+			numNewGames++
+			if err = dbMap.Insert(game); err != nil {
+				return err
+			}
+			price.GameID = game.ID
+			if err = dbMap.Insert(price); err != nil {
+				return err
+			}
+		}
+	}
+	util.LogInfo("price updated",
+		zap.String("source", handler.GetSource()),
+		zap.Int("number", numPriceUpdate),
+	)
+	util.LogInfo("new games inserted",
+		zap.String("source", handler.GetSource()),
+		zap.Int("number", numNewGames),
+	)
+
+	util.LogInfo("end", zap.String("source", handler.GetSource()))
+	return nil
 }
