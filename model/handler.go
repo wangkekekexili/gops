@@ -12,5 +12,5 @@ type GameHandler interface {
 
 var AllGameHandlers = []GameHandler{
 	&TargetHandler{},
-	//&WalmartHandler{},
+	&WalmartHandler{},
 }
