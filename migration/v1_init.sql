@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS game
   `condition` VARCHAR(20) NOT NULL,
   `source`    VARCHAR(20) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY (`name`, `condition`)
+  UNIQUE KEY (`name`, `condition`, `source`)
 ) ENGINE=INNODB CHARACTER SET=ascii;
 
 CREATE TABLE IF NOT EXISTS price
