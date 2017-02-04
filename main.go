@@ -66,7 +66,7 @@ func main() {
 	var wg sync.WaitGroup
 	for _, handler := range gops.AllGameHandlers {
 		wg.Add(1)
-		go func() {
+		go func(handler gops.GameHandler) {
 			defer func() {
 				if r := recover(); r != nil {
 					err := fmt.Errorf("panic captured: %v", r)
@@ -79,7 +79,7 @@ func main() {
 				util.LogError(err.Error(), zap.String("source", handler.GetSource()))
 				raven.CaptureError(err, nil, nil)
 			}
-		}()
+		}(handler)
 	}
 	wg.Wait()
 }

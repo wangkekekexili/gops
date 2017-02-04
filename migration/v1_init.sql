@@ -1,12 +1,12 @@
 CREATE TABLE IF NOT EXISTS game
 (
   `id`        INT NOT NULL AUTO_INCREMENT,
-  `name`      VARCHAR(255) NOT NULL,
+  `name`      VARCHAR(127) NOT NULL,
   `condition` VARCHAR(20) NOT NULL,
   `source`    VARCHAR(20) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY (`name`, `condition`, `source`)
-) ENGINE=INNODB CHARACTER SET=ascii;
+) ENGINE=INNODB CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS price
 (
@@ -17,4 +17,4 @@ CREATE TABLE IF NOT EXISTS price
   PRIMARY KEY (`id`),
   KEY (`game_id`, `timestamp`),
   FOREIGN KEY (`game_id`) REFERENCES game(`id`)
-) ENGINE=INNODB CHARACTER SET=ascii;
+) ENGINE=INNODB CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci;

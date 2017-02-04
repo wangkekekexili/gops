@@ -2,6 +2,7 @@ package gops
 
 import (
 	"encoding/json"
+	"html"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -83,7 +84,7 @@ func (t *TargetHandler) GetSource() string {
 func (t *TargetHandler) extractName(s string) (string, bool) {
 	matches := targetPS4Regex.FindStringSubmatch(s)
 	if len(matches) == 3 {
-		return matches[1], true
+		return html.UnescapeString(matches[1]), true
 	}
 	return "", false
 }

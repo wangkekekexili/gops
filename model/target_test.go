@@ -20,6 +20,10 @@ func TestTargetHandler_extractName(t *testing.T) {
 		title: "NBA Live 16 (PlayStation 4)",
 		ok:    true,
 		name:  "NBA Live 16",
+	}, {
+		title: "Uncharted 4: A Thief&rsquo;s End&#153; Special Edition (PlayStation 4)",
+		ok:    true,
+		name:  "Uncharted 4: A Thief’s End™ Special Edition",
 	}}
 	for _, test := range tests {
 		nameGot, okGot := h.extractName(test.title)
