@@ -33,6 +33,11 @@ func (builder *GameBuilder) SetName(name string) *GameBuilder {
 	return builder
 }
 
+func (builder *GameBuilder) FromGamestop() *GameBuilder {
+	builder.game.Source = ProductSourceGamestop
+	return builder
+}
+
 func (builder *GameBuilder) FromTarget() *GameBuilder {
 	builder.game.Source = ProductSourceTarget
 	return builder
