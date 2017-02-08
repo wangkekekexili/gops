@@ -69,7 +69,6 @@ func (g *GamestopHandler) GetGames() ([]GamePrice, error) {
 				)
 				return
 			}
-			fmt.Println(name, condition)
 			game := NewGameBuilder().SetName(name).SetCondition(condition).FromGamestop().Build()
 			games = append(games, GamePrice{Game: game, Price: NewPrice(-1, price)})
 		})
