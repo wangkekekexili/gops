@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -52,7 +53,7 @@ func init() {
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
-			err := fmt.Errorf("panic captured: %v", r)
+			err := fmt.Errorf("panic captured: %v\n%s", r, getCallerInfo())
 			util.LogError(err.Error())
 			raven.CaptureError(err, nil)
 		}
@@ -69,7 +70,7 @@ func main() {
 		go func(handler gops.GameHandler) {
 			defer func() {
 				if r := recover(); r != nil {
-					err := fmt.Errorf("panic captured: %v", r)
+					err := fmt.Errorf("panic captured: %v\n%s", r, getCallerInfo())
 					util.LogError(err.Error())
 					raven.CaptureError(err, nil)
 				}
@@ -157,4 +158,18 @@ func handleGames(handler gops.GameHandler) error {
 
 	util.LogInfo("end", zap.String("source", handler.GetSource()))
 	return nil
+}
+
+// getCallerInfo returns caller information as string for debugging.
+func getCallerInfo() string {
+	skip := 0
+	var callerInfo string
+	for {
+		_, path, line, ok := runtime.Caller(skip)
+		if !ok {
+			break
+		}
+		callerInfo += fmt.Sprintf("%s:%d\n", path, line)
+	}
+	return callerInfo
 }
