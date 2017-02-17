@@ -162,7 +162,7 @@ func handleGames(handler gops.GameHandler) error {
 
 // getCallerInfo returns caller information as string for debugging.
 func getCallerInfo() string {
-	skip := 0
+	skip := 1
 	var callerInfo string
 	for {
 		_, path, line, ok := runtime.Caller(skip)
@@ -170,6 +170,7 @@ func getCallerInfo() string {
 			break
 		}
 		callerInfo += fmt.Sprintf("%s:%d\n", path, line)
+		skip++
 	}
 	return callerInfo
 }
