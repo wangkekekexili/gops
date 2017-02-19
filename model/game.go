@@ -1,6 +1,9 @@
 package gops
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Game struct {
 	ID        int    `db:"id, primarykey, autoincrement"`
@@ -11,7 +14,7 @@ type Game struct {
 
 // GetKey returns a key that uniquely identifies a game.
 func (g *Game) GetKey() string {
-	return fmt.Sprintf("%v\x00%v\x00%v", g.Name, g.Condition, g.Source)
+	return fmt.Sprintf("%v\x00%v\x00%v", strings.ToLower(g.Name), g.Condition, g.Source)
 }
 
 type GameBuilder struct {
