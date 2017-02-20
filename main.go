@@ -40,6 +40,7 @@ func init() {
 	}
 	if err = db.Ping(); err != nil {
 		util.LogError(err.Error())
+		util.SendWarningSMS()
 		raven.CaptureErrorAndWait(err, nil)
 		os.Exit(1)
 	}
