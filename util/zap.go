@@ -1,18 +1,21 @@
 package util
 
-import "github.com/uber-go/zap"
+import (
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
 
-var logger zap.Logger
+var logger *zap.Logger
 
 func init() {
 	// Init logger.
-	logger = zap.New(zap.NewJSONEncoder(zap.NoTime()))
+	logger, _ = zap.NewProduction(zap.AddCaller())
 }
 
-func LogError(message string, fields ...zap.Field) {
+func LogError(message string, fields ...zapcore.Field) {
 	logger.Error(message, fields...)
 }
 
-func LogInfo(message string, fields ...zap.Field) {
+func LogInfo(message string, fields ...zapcore.Field) {
 	logger.Info(message, fields...)
 }

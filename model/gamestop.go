@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/uber-go/zap"
 	"github.com/wangkekekexili/gops/util"
+	"go.uber.org/zap"
 )
 
 const (

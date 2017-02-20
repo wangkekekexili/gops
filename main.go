@@ -11,9 +11,9 @@ import (
 	"github.com/getsentry/raven-go"
 	"github.com/go-gorp/gorp"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/uber-go/zap"
 	"github.com/wangkekekexili/gops/model"
 	"github.com/wangkekekexili/gops/util"
+	"go.uber.org/zap"
 )
 
 var (

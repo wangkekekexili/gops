@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/uber-go/zap"
 	"github.com/wangkekekexili/gops/util"
+	"go.uber.org/zap"
 )
 
 const (
