@@ -9,7 +9,7 @@ var logger *zap.Logger
 
 func init() {
 	// Init logger.
-	logger, _ = zap.NewProduction(zap.AddCaller())
+	logger, _ = zap.NewProduction()
 }
 
 func LogError(message string, fields ...zapcore.Field) {
