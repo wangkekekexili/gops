@@ -1,13 +1,13 @@
 package util
 
+// till is SMS service.
+
 import (
 	"bytes"
 	"encoding/json"
 	"net/http"
 	"os"
 )
-
-// till is a SMS service.
 
 type tillRequest struct {
 	Phone []string `json:"phone"`
