@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+const (
+	ProductConditionNew      = "new"
+	ProductConditionPreowned = "pre-owned"
+
+	ProductSourceGamefly  = "gamefly"
+	ProductSourceGamestop = "gamestop"
+	ProductSourceTarget   = "target"
+	ProductSourceWalmart  = "walmart"
+)
+
 type Game struct {
 	ID        int    `db:"id, primarykey, autoincrement"`
 	Name      string `db:"name"`
