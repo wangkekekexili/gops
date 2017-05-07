@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"net"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/wangkekekexili/gops/util"
 	"go.uber.org/zap"
@@ -25,8 +27,16 @@ func (g *GamestopHandler) GetGames() ([]GamePrice, error) {
 	var games []GamePrice
 	offset := 0
 	for {
-		document, err := goquery.NewDocument(gamestopURL + fmt.Sprintf("nav=2b%d,28-xu0,131dc-ffff2418", offset))
-		if err != nil {
+		var document *goquery.Document
+		var err error
+		for retry := 0; retry != 2; retry++ {
+			document, err = goquery.NewDocument(gamestopURL + fmt.Sprintf("nav=2b%d,28-xu0,131dc-ffff2418", offset))
+			if err == nil {
+				break
+			}
+			if _, ok := err.(*net.OpError); ok {
+				continue
+			}
 			return nil, err
 		}
 		products := document.Find(".product")

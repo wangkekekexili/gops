@@ -79,7 +79,7 @@ func main() {
 			}()
 			if err := handleGames(handler); err != nil {
 				util.LogError(err.Error(), zap.String("source", handler.GetSource()))
-				raven.CaptureError(err, nil, nil)
+				raven.CaptureError(err, nil)
 			}
 		}(handler)
 	}
