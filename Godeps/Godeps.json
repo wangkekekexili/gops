@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/wangkekekexili/gops",
 	"GoVersion": "go1.8",
-	"GodepVersion": "v62",
+	"GodepVersion": "v79",
 	"Packages": [
 		"."
 	],
@@ -33,6 +33,14 @@
 			"ImportPath": "github.com/go-sql-driver/mysql",
 			"Comment": "v1.2-213-g665b834",
 			"Rev": "665b83488b90b902ce0a305ef6652e599771cdf9"
+		},
+		{
+			"ImportPath": "github.com/tidwall/gjson",
+			"Rev": "e30a9c1037e0f9fbde93a6a9848a2dd5c59d3b91"
+		},
+		{
+			"ImportPath": "github.com/tidwall/match",
+			"Rev": "173748da739a410c5b0b813b956f89ff94730b4c"
 		},
 		{
 			"ImportPath": "go.uber.org/atomic",
