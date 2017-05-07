@@ -1,7 +1,6 @@
 package gops
 
 import (
-	"encoding/json"
 	"html"
 	"io/ioutil"
 	"net/http"
@@ -9,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/tidwall/gjson"
 	"github.com/wangkekekexili/gops/util"
 	"go.uber.org/zap"
 )
@@ -40,34 +40,45 @@ func (t *TargetHandler) GetGames() ([]GamePrice, error) {
 		if err != nil {
 			return nil, err
 		}
-		bytes, err := ioutil.ReadAll(httpResponse.Body)
+		responseBytes, err := ioutil.ReadAll(httpResponse.Body)
 		if err != nil {
 			return nil, err
 		}
 		httpResponse.Body.Close()
 
-		searchResponse := make(map[string]interface{})
-		if err := json.Unmarshal(bytes, &searchResponse); err != nil {
-			return nil, err
+		// Get items from the json response.
+		gameItemsResult := gjson.Get(string(responseBytes), "search_response.items.Item")
+		if !gameItemsResult.Exists() {
+			util.LogInfo("no games in the json",
+				zap.String("source", ProductSourceTarget),
+				zap.String("json", string(responseBytes)),
+			)
+			break
 		}
-		gameItems := searchResponse["search_response"].(map[string]interface{})["items"].(map[string]interface{})["Item"].([]interface{})
+		gameItems := gameItemsResult.Array()
 		if len(gameItems) == 0 {
 			break
 		}
 		offset += len(gameItems)
 
-		for _, gameInfoInterface := range gameItems {
-			gameInfo := gameInfoInterface.(map[string]interface{})
-			title := gameInfo["title"].(string)
-			name, ok := t.extractName(title)
-			if !ok {
+		for _, gameInfo := range gameItems {
+			title := gameInfo.Get("title")
+			if !title.Exists() {
 				util.LogInfo("uncognizable name",
 					zap.String("source", ProductSourceTarget),
-					zap.String("name", title),
+					zap.String("json", gameInfo.Raw),
 				)
 				continue
 			}
-			price := gameInfo["offer_price"].(map[string]interface{})["price"].(float64)
+			name, ok := t.extractName(title.String())
+			if !ok {
+				util.LogInfo("uncognizable name",
+					zap.String("source", ProductSourceTarget),
+					zap.String("name", title.String()),
+				)
+				continue
+			}
+			price := gameInfo.Get("offer_price.price").Float()
 			game := NewGameBuilder().FromTarget().IsNew().SetName(name).Build()
 			games = append(games, GamePrice{Game: game, Price: NewPrice(-1, price)})
 		}
