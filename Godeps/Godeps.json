@@ -25,11 +25,6 @@
 			"Rev": "3f7439d3e74d88e21d196ba20eb61a5a958bc118"
 		},
 		{
-			"ImportPath": "github.com/go-gorp/gorp",
-			"Comment": "v2.0.0-1-g38e1f13",
-			"Rev": "38e1f13a40bf2445da3204161a38df0d0b006e83"
-		},
-		{
 			"ImportPath": "github.com/go-sql-driver/mysql",
 			"Comment": "v1.2-213-g665b834",
 			"Rev": "665b83488b90b902ce0a305ef6652e599771cdf9"

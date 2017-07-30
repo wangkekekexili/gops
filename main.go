@@ -9,16 +9,13 @@ import (
 	"sync"
 
 	"github.com/getsentry/raven-go"
-	"github.com/go-gorp/gorp"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/wangkekekexili/gops/model"
 	"github.com/wangkekekexili/gops/util"
 	"go.uber.org/zap"
 )
 
-var (
-	dbMap *gorp.DbMap
-)
+var db *sql.DB
 
 func init() {
 	// Init error reporter.
@@ -31,7 +28,6 @@ func init() {
 
 	// Check db connection.
 	var err error
-	var db *sql.DB
 	db, err = sql.Open("mysql", os.Getenv("MYSQL_DSN"))
 	if err != nil {
 		util.LogError(err.Error())
@@ -44,11 +40,6 @@ func init() {
 		raven.CaptureErrorAndWait(err, nil)
 		os.Exit(1)
 	}
-
-	// Initialize dbMap.
-	dbMap = &gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{Engine: "innodb", Encoding: "ascii"}}
-	dbMap.AddTableWithName(gops.Game{}, "game")
-	dbMap.AddTableWithName(gops.Price{}, "price")
 }
 
 func main() {
@@ -58,7 +49,7 @@ func main() {
 			util.LogError(err.Error())
 			raven.CaptureError(err, nil)
 		}
-		if err := dbMap.Db.Close(); err != nil {
+		if err := db.Close(); err != nil {
 			util.LogError(err.Error())
 			raven.CaptureError(err, nil, nil)
 		}
@@ -106,13 +97,28 @@ func handleGames(handler gops.GameHandler) error {
 	}
 
 	// Get existing games.
-	var existingGames []gops.Game
-	if _, err := dbMap.Select(&existingGames, `SELECT * FROM game WHERE name IN `+util.QuestionMarks(len(gameNames)), gameNames...); err != nil {
+	var existingGames []*gops.Game
+	rows, err := db.Query(`SELECT * FROM game WHERE name IN `+util.QuestionMarks(len(gameNames)), gameNames...)
+	if err != nil {
 		return err
 	}
+	defer rows.Close()
+	for rows.Next() {
+		var g gops.Game
+		err = rows.Scan(&g.ID, &g.Name, &g.Condition, &g.Source)
+		if err != nil {
+			return err
+		}
+		existingGames = append(existingGames, &g)
+	}
+	rows.Close()
+	if rows.Err() != nil {
+		return rows.Err()
+	}
+
 	existingGamesByKey := make(map[string]*gops.Game)
 	for i, game := range existingGames {
-		existingGamesByKey[game.GetKey()] = &existingGames[i]
+		existingGamesByKey[game.GetKey()] = existingGames[i]
 	}
 
 	var numNewGames, numPriceUpdate int
@@ -122,7 +128,9 @@ func handleGames(handler gops.GameHandler) error {
 		// Check if the game has an existing entry.
 		if existingGame, hasExistingEntry := existingGamesByKey[game.GetKey()]; hasExistingEntry {
 			// Get the last price for the game.
-			lastPrice, err := dbMap.SelectFloat(`SELECT value FROM price WHERE game_id = ? ORDER BY timestamp desc`, existingGame.ID)
+			var lastPrice float64
+			err = db.QueryRow(`SELECT value FROM price WHERE game_id = ? ORDER BY timestamp desc`, existingGame.ID).
+				Scan(&lastPrice)
 			if err != nil {
 				return err
 			}
@@ -133,17 +141,24 @@ func handleGames(handler gops.GameHandler) error {
 			// New price point.
 			numPriceUpdate++
 			price.GameID = existingGame.ID
-			if err = dbMap.Insert(price); err != nil {
+			_, err = db.Exec(`INSERT INTO price (game_id, value) VALUES `+util.QuestionMarks(2), existingGame.ID, price.Value)
+			if err != nil {
 				return err
 			}
 		} else {
 			// It's new game.
 			numNewGames++
-			if err = dbMap.Insert(game); err != nil {
+			result, err := db.Exec(`INSERT INTO game (name, condition, source) VALUES `+util.QuestionMarks(3),
+				game.Name, game.Condition, game.Source)
+			if err != nil {
 				return err
 			}
-			price.GameID = game.ID
-			if err = dbMap.Insert(price); err != nil {
+			gameID, err := result.LastInsertId()
+			if err != nil {
+				return err
+			}
+			_, err = db.Exec(`INSERT INTO price (game_id, values) VALUES `+util.QuestionMarks(2), gameID, price.Value)
+			if err != nil {
 				return err
 			}
 		}
