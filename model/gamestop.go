@@ -7,9 +7,12 @@ import (
 
 	"net"
 
+	"time"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/wangkekekexili/gops/util"
 	"go.uber.org/zap"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -30,14 +33,16 @@ func (g *GamestopHandler) GetGames() ([]GamePrice, error) {
 		var document *goquery.Document
 		var err error
 		for retry := 0; retry != 2; retry++ {
-			document, err = goquery.NewDocument(gamestopURL + fmt.Sprintf("nav=2b%d,28-xu0,131dc-ffff2418", offset))
+			u := fmt.Sprintf("%vnav=2b%d,28-xu0,131dc-ffff2418", gamestopURL, offset)
+			document, err = goquery.NewDocument(u)
 			if err == nil {
 				break
 			}
 			if _, ok := err.(*net.OpError); ok {
+				time.Sleep(time.Second)
 				continue
 			}
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to get from %v", u)
 		}
 		products := document.Find(".product")
 		if products.Size() == 0 {

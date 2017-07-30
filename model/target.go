@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/wangkekekexili/gops/util"
 	"go.uber.org/zap"
@@ -38,11 +39,11 @@ func (t *TargetHandler) GetGames() ([]GamePrice, error) {
 		params.Set("offset", strconv.Itoa(offset))
 		httpResponse, err := http.Get(targetURL + params.Encode())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to get from %v", targetURL+params.Encode())
 		}
 		responseBytes, err := ioutil.ReadAll(httpResponse.Body)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to read body")
 		}
 		httpResponse.Body.Close()
 

@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/wangkekekexili/gops/util"
 	"go.uber.org/zap"
 )
@@ -44,18 +45,18 @@ func (w *WalmartHandler) GetGames() ([]GamePrice, error) {
 		params.Set("start", strconv.Itoa(start))
 		response, err := http.Get(walmartSearchAPI + params.Encode())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to get from %v", walmartSearchAPI+params.Encode())
 		}
 		bytes, err := ioutil.ReadAll(response.Body)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to read body")
 		}
 		response.Body.Close()
 
 		// Extract from JSON.
 		data := make(map[string]interface{})
 		if err = json.Unmarshal(bytes, &data); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to unmarshal from %v", string(bytes))
 		}
 		numItems := int(data["numItems"].(float64))
 		if numItems == 0 {
