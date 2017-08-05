@@ -1,6 +1,10 @@
 package server
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/wangkekekexili/gops/model"
+)
 
 func TestWalmartHandler_extractNameAndCondition(t *testing.T) {
 	w := &WalmartHandler{}
@@ -16,17 +20,17 @@ func TestWalmartHandler_extractNameAndCondition(t *testing.T) {
 		fullname:  "Minecraft (PS4)",
 		ok:        true,
 		name:      "Minecraft",
-		condition: ProductConditionNew,
+		condition: model.ProductConditionNew,
 	}, {
 		fullname:  "Watch Dogs (PS4) - Pre-Owned",
 		ok:        true,
 		name:      "Watch Dogs",
-		condition: ProductConditionPreowned,
+		condition: model.ProductConditionPreowned,
 	}, {
 		fullname:  "Tom Clancy's The Division - Pre-Owned (PS4)",
 		ok:        true,
 		name:      "Tom Clancy's The Division",
-		condition: ProductConditionPreowned,
+		condition: model.ProductConditionPreowned,
 	}}
 	for _, test := range tests {
 		nameGot, conditionGot, okGot := w.extractNameAndCondition(test.fullname)
