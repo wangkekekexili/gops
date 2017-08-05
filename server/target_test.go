@@ -1,4 +1,4 @@
-package gops
+package server
 
 import "testing"
 

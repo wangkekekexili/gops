@@ -1,4 +1,4 @@
-package gops
+package server
 
 import (
 	"encoding/json"
@@ -10,8 +10,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/wangkekekexili/gops/util"
-	"go.uber.org/zap"
+	"github.com/wangkekekexili/gops/model"
 )
 
 const (
@@ -26,22 +25,40 @@ var (
 	walmartPreownedProductRegex = regexp.MustCompile(`(.+) (- Pre-Owned \(PS4\)|\(PS4\) - Pre-Owned)$`)
 )
 
-type WalmartHandler struct{}
+type WalmartHandler struct {
+	Logger *Logger
+
+	ok     bool
+	params url.Values
+}
+
+func (w *WalmartHandler) Load() error {
+	k := os.Getenv("WALMART_KEY")
+	if k == "" {
+		return nil
+	}
+
+	w.ok = true
+	w.params.Set("apiKey", k)
+	w.params.Set("categoryId", walmartPS4CategoryID)
+	w.params.Set("query", "ps4")
+	w.params.Set("format", "json")
+	w.params.Set("numItems", "25")
+	return nil
+}
 
 var _ GameHandler = &WalmartHandler{}
 
-func (w *WalmartHandler) GetGames() ([]GamePrice, error) {
-	var games []GamePrice
+func (w *WalmartHandler) GetGames() ([]*model.GamePrice, error) {
+	if !w.ok {
+		return nil, nil
+	}
 
-	params := &url.Values{}
+	var games []*model.GamePrice
 	start := 1
-	params.Set("apiKey", os.Getenv("WALMART_KEY"))
-	params.Set("categoryId", walmartPS4CategoryID)
-	params.Set("query", "ps4")
-	params.Set("format", "json")
-	params.Set("numItems", "25")
 	for {
 		// Make request and get JSON data.
+		params := w.params
 		params.Set("start", strconv.Itoa(start))
 		response, err := http.Get(walmartSearchAPI + params.Encode())
 		if err != nil {
@@ -76,32 +93,29 @@ func (w *WalmartHandler) GetGames() ([]GamePrice, error) {
 			fullname := item["name"].(string)
 			name, condition, ok := w.extractNameAndCondition(fullname)
 			if !ok {
-				util.LogInfo("unrecognizable name",
-					zap.String("source", ProductSourceWalmart),
-					zap.String("fullname", fullname),
-				)
+				w.Logger.Info("unrecognizable name", map[string]interface{}{"source": model.ProductSourceWalmart, "fullanem": fullname})
 				continue
 			}
 			price := item["salePrice"].(float64)
-			game := NewGameBuilder().FromWalmart().SetName(name).SetCondition(condition).Build()
-			games = append(games, GamePrice{Game: game, Price: NewPrice(-1, price)})
+			game := model.NewGamePriceBuilder().FromWalmart().SetName(name).SetCondition(condition).SetPrice(price).Build()
+			games = append(games, game)
 		}
 	}
 	return games, nil
 }
 
 func (w *WalmartHandler) GetSource() string {
-	return ProductSourceWalmart
+	return model.ProductSourceWalmart
 }
 
 func (w *WalmartHandler) extractNameAndCondition(s string) (string, string, bool) {
 	matches := walmartPreownedProductRegex.FindStringSubmatch(s)
 	if len(matches) == 3 {
-		return matches[1], ProductConditionPreowned, true
+		return matches[1], model.ProductConditionPreowned, true
 	}
 	matches = walmartNewProductRegex.FindStringSubmatch(s)
 	if len(matches) == 2 {
-		return matches[1], ProductConditionNew, true
+		return matches[1], model.ProductConditionNew, true
 	}
 	return "", "", false
 }

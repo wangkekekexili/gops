@@ -1,4 +1,4 @@
-package gops
+package server
 
 import (
 	"html"
@@ -10,8 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
-	"github.com/wangkekekexili/gops/util"
-	"go.uber.org/zap"
+	"github.com/wangkekekexili/gops/model"
 )
 
 const (
@@ -22,12 +21,16 @@ var (
 	targetPS4Regex = regexp.MustCompile(`(.+)( \(PlayStation 4\)| - PlayStation 4)$`)
 )
 
-type TargetHandler struct{}
+type TargetHandler struct {
+	Logger *Logger
+}
+
+func (t *TargetHandler) Load() error { return nil }
 
 var _ GameHandler = &TargetHandler{}
 
-func (t *TargetHandler) GetGames() ([]GamePrice, error) {
-	var games []GamePrice
+func (t *TargetHandler) GetGames() ([]*model.GamePrice, error) {
+	var games []*model.GamePrice
 
 	params := &url.Values{}
 	params.Set("keyword", "playstation 4")
@@ -50,10 +53,7 @@ func (t *TargetHandler) GetGames() ([]GamePrice, error) {
 		// Get items from the json response.
 		gameItemsResult := gjson.Get(string(responseBytes), "search_response.items.Item")
 		if !gameItemsResult.Exists() {
-			util.LogInfo("no games in the json",
-				zap.String("source", ProductSourceTarget),
-				zap.String("json", string(responseBytes)),
-			)
+			t.Logger.Info("no games in the json", map[string]interface{}{"source": model.ProductSourceTarget, "json": string(responseBytes)})
 			break
 		}
 		gameItems := gameItemsResult.Array()
@@ -65,23 +65,23 @@ func (t *TargetHandler) GetGames() ([]GamePrice, error) {
 		for _, gameInfo := range gameItems {
 			title := gameInfo.Get("title")
 			if !title.Exists() {
-				util.LogInfo("uncognizable name",
-					zap.String("source", ProductSourceTarget),
-					zap.String("json", gameInfo.Raw),
-				)
+				t.Logger.Info("uncognizable name", map[string]interface{}{
+					"source": model.ProductSourceTarget,
+					"json":   gameInfo.Raw,
+				})
 				continue
 			}
 			name, ok := t.extractName(title.String())
 			if !ok {
-				util.LogInfo("uncognizable name",
-					zap.String("source", ProductSourceTarget),
-					zap.String("name", title.String()),
-				)
+				t.Logger.Info("unrecognizable name", map[string]interface{}{
+					"source": model.ProductSourceTarget,
+					"name":   title.String(),
+				})
 				continue
 			}
 			price := gameInfo.Get("offer_price.price").Float()
-			game := NewGameBuilder().FromTarget().IsNew().SetName(name).Build()
-			games = append(games, GamePrice{Game: game, Price: NewPrice(-1, price)})
+			game := model.NewGamePriceBuilder().FromTarget().IsNew().SetName(name).SetPrice(price).Build()
+			games = append(games, game)
 		}
 
 	}
@@ -90,7 +90,7 @@ func (t *TargetHandler) GetGames() ([]GamePrice, error) {
 }
 
 func (t *TargetHandler) GetSource() string {
-	return ProductSourceTarget
+	return model.ProductSourceTarget
 }
 
 func (t *TargetHandler) extractName(s string) (string, bool) {

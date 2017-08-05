@@ -1,18 +1,15 @@
-package gops
+package server
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
-
-	"net"
-
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/wangkekekexili/gops/util"
-	"go.uber.org/zap"
 	"github.com/pkg/errors"
+	"github.com/wangkekekexili/gops/model"
 )
 
 const (
@@ -22,12 +19,16 @@ const (
 	gamestopNewClass      = "new_product"
 )
 
-type GamestopHandler struct{}
+type GamestopHandler struct {
+	Logger *Logger
+}
+
+func (g *GamestopHandler) Load() error { return nil }
 
 var _ GameHandler = &GamestopHandler{}
 
-func (g *GamestopHandler) GetGames() ([]GamePrice, error) {
-	var games []GamePrice
+func (g *GamestopHandler) GetGames() ([]*model.GamePrice, error) {
+	var games []*model.GamePrice
 	offset := 0
 	for {
 		var document *goquery.Document
@@ -54,17 +55,16 @@ func (g *GamestopHandler) GetGames() ([]GamePrice, error) {
 			var name, condition string
 			var price float64
 			if s.HasClass(gamestopPreownedClass) {
-				condition = ProductConditionPreowned
+				condition = model.ProductConditionPreowned
 			} else if s.HasClass(gamestopNewClass) {
-				condition = ProductConditionNew
+				condition = model.ProductConditionNew
 			} else if s.HasClass("digital_product") {
 				// We currently don't handle digital products.
 				return
 			} else {
 				h, _ := s.Html()
-				util.LogInfo("the product doesn't have condition class",
-					zap.String("source", ProductSourceGamestop),
-					zap.String("content", h),
+				g.Logger.Info("the product doesn't have condition class",
+					map[string]interface{}{"source": model.ProductSourceGamestop, "content": h},
 				)
 				return
 			}
@@ -78,14 +78,14 @@ func (g *GamestopHandler) GetGames() ([]GamePrice, error) {
 			priceNode.Children().First().Remove()
 			price, err = strconv.ParseFloat(priceNode.Text()[1:], 64)
 			if err != nil {
-				util.LogInfo("cannot parse price",
-					zap.String("source", ProductSourceGamestop),
-					zap.String("content", priceNode.Text()),
+				g.Logger.Info("cannot parse price", map[string]interface{}{
+					"source":  model.ProductSourceGamestop,
+					"content": priceNode.Text()},
 				)
 				return
 			}
-			game := NewGameBuilder().SetName(name).SetCondition(condition).FromGamestop().Build()
-			games = append(games, GamePrice{Game: game, Price: NewPrice(-1, price)})
+			game := model.NewGamePriceBuilder().SetName(name).SetCondition(condition).FromGamestop().SetPrice(price).Build()
+			games = append(games, game)
 		})
 	}
 
@@ -93,5 +93,5 @@ func (g *GamestopHandler) GetGames() ([]GamePrice, error) {
 }
 
 func (g *GamestopHandler) GetSource() string {
-	return ProductSourceGamestop
+	return model.ProductSourceGamestop
 }
