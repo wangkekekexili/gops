@@ -39,6 +39,7 @@ func (w *WalmartHandler) Load() error {
 	}
 
 	w.ok = true
+	w.params = url.Values{}
 	w.params.Set("apiKey", k)
 	w.params.Set("categoryId", walmartPS4CategoryID)
 	w.params.Set("query", "ps4")
