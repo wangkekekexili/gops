@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/wangkekekexili/gops/model"
+	"go.uber.org/zap"
 )
 
 const (
@@ -94,7 +95,7 @@ func (w *WalmartHandler) GetGames() ([]*model.GamePrice, error) {
 			fullname := item["name"].(string)
 			name, condition, ok := w.extractNameAndCondition(fullname)
 			if !ok {
-				w.Logger.Info("unrecognizable name", map[string]interface{}{"source": model.ProductSourceWalmart, "fullanem": fullname})
+				w.Logger.Info("unrecognizable name", zap.String("source", model.ProductSourceWalmart), zap.String("fullname", fullname))
 				continue
 			}
 			price := item["salePrice"].(float64)

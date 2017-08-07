@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/wangkekekexili/gops/model"
+	"go.uber.org/zap"
 )
 
 const (
@@ -30,6 +31,8 @@ func (t *TargetHandler) Load() error { return nil }
 var _ GameHandler = &TargetHandler{}
 
 func (t *TargetHandler) GetGames() ([]*model.GamePrice, error) {
+	logger := t.Logger.With(zap.String("source", model.ProductSourceTarget))
+
 	var games []*model.GamePrice
 
 	params := &url.Values{}
@@ -53,7 +56,7 @@ func (t *TargetHandler) GetGames() ([]*model.GamePrice, error) {
 		// Get items from the json response.
 		gameItemsResult := gjson.Get(string(responseBytes), "search_response.items.Item")
 		if !gameItemsResult.Exists() {
-			t.Logger.Info("no games in the json", map[string]interface{}{"source": model.ProductSourceTarget, "json": string(responseBytes)})
+			logger.Info("no games in the json", zap.String("json", string(responseBytes)))
 			break
 		}
 		gameItems := gameItemsResult.Array()
@@ -65,18 +68,12 @@ func (t *TargetHandler) GetGames() ([]*model.GamePrice, error) {
 		for _, gameInfo := range gameItems {
 			title := gameInfo.Get("title")
 			if !title.Exists() {
-				t.Logger.Info("uncognizable name", map[string]interface{}{
-					"source": model.ProductSourceTarget,
-					"json":   gameInfo.Raw,
-				})
+				logger.Info("unrecognizable title", zap.String("json", gameInfo.Raw))
 				continue
 			}
 			name, ok := t.extractName(title.String())
 			if !ok {
-				t.Logger.Info("unrecognizable name", map[string]interface{}{
-					"source": model.ProductSourceTarget,
-					"name":   title.String(),
-				})
+				logger.Info("unrecognizable name", zap.String("name", title.String()))
 				continue
 			}
 			price := gameInfo.Get("offer_price.price").Float()

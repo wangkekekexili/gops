@@ -5,11 +5,11 @@ import (
 	"runtime/debug"
 	"sync"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"github.com/wangkekekexili/gops/model"
 	"github.com/wangkekekexili/gops/util"
-	_ "github.com/go-sql-driver/mysql"
+	"go.uber.org/zap"
 )
 
 type GOPS struct {
@@ -40,7 +40,7 @@ func (s *GOPS) Start() error {
 	defer func() {
 		err := s.DB.Close()
 		if err != nil {
-			s.Logger.Err(err.Error(), nil)
+			s.Logger.Err(err.Error())
 			s.Reporter.ErrSync(err)
 		}
 	}()
@@ -52,13 +52,13 @@ func (s *GOPS) Start() error {
 			defer func() {
 				if r := recover(); r != nil {
 					err := fmt.Errorf("panic captured: %v\n%s", r, string(debug.Stack()))
-					s.Logger.Info(err.Error(), nil)
+					s.Logger.Info(err.Error())
 					s.Reporter.Err(err)
 				}
 				wg.Done()
 			}()
 			if err := s.handleGames(handler); err != nil {
-				s.Logger.Err(err.Error(), map[string]interface{}{"source": handler.GetSource()})
+				s.Logger.Err(err.Error(), zap.String("source", handler.GetSource()))
 				s.Reporter.Err(err)
 			}
 		}(handler)
@@ -68,16 +68,14 @@ func (s *GOPS) Start() error {
 }
 
 func (s *GOPS) handleGames(handler GameHandler) error {
-	s.Logger.Info("start processing", map[string]interface{}{"source": handler.GetSource()})
+	logger := s.Logger.With(zap.String("source", handler.GetSource()))
+	logger.Info("start processing")
 
 	gamesWithPrice, err := handler.GetGames()
 	if err != nil {
 		return err
 	}
-	s.Logger.InfoZap("successfully get games",
-		zap.String("source", handler.GetSource()),
-		zap.Int("game_count", len(gamesWithPrice)),
-	)
+	logger.Info("successfully get games", zap.Int("count", len(gamesWithPrice)))
 	if len(gamesWithPrice) == 0 {
 		return nil
 	}
@@ -152,15 +150,9 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 			}
 		}
 	}
-	s.Logger.InfoZap("price updated",
-		zap.String("source", handler.GetSource()),
-		zap.Int("number", numPriceUpdate),
-	)
-	s.Logger.InfoZap("new games inserted",
-		zap.String("source", handler.GetSource()),
-		zap.Int("number", numNewGames),
-	)
 
-	s.Logger.InfoZap("end", zap.String("source", handler.GetSource()))
+	logger.Info("price updated", zap.Int("count", numPriceUpdate))
+	logger.Info("new games inserted", zap.Int("count", numNewGames))
+	logger.Info("end")
 	return nil
 }

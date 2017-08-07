@@ -10,6 +10,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/pkg/errors"
 	"github.com/wangkekekexili/gops/model"
+	"go.uber.org/zap"
 )
 
 const (
@@ -28,6 +29,7 @@ func (g *GamestopHandler) Load() error { return nil }
 var _ GameHandler = &GamestopHandler{}
 
 func (g *GamestopHandler) GetGames() ([]*model.GamePrice, error) {
+	logger := g.Logger.With(zap.String("source", model.ProductSourceGamestop))
 	var games []*model.GamePrice
 	offset := 0
 	for {
@@ -63,9 +65,7 @@ func (g *GamestopHandler) GetGames() ([]*model.GamePrice, error) {
 				return
 			} else {
 				h, _ := s.Html()
-				g.Logger.Info("the product doesn't have condition class",
-					map[string]interface{}{"source": model.ProductSourceGamestop, "content": h},
-				)
+				logger.Info("the product doesn't have condition class", zap.String("content", h))
 				return
 			}
 
@@ -78,10 +78,7 @@ func (g *GamestopHandler) GetGames() ([]*model.GamePrice, error) {
 			priceNode.Children().First().Remove()
 			price, err = strconv.ParseFloat(priceNode.Text()[1:], 64)
 			if err != nil {
-				g.Logger.Info("cannot parse price", map[string]interface{}{
-					"source":  model.ProductSourceGamestop,
-					"content": priceNode.Text()},
-				)
+				logger.Info("cannot parse price", zap.String("content", priceNode.Text()))
 				return
 			}
 			game := model.NewGamePriceBuilder().SetName(name).SetCondition(condition).FromGamestop().SetPrice(price).Build()
