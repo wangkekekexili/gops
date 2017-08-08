@@ -11,7 +11,7 @@ type Logger struct {
 }
 
 func (g *Logger) Load() error {
-	temp, err := zap.NewProduction()
+	temp, err := zap.NewProduction(zap.AddCallerSkip(1))
 	if err != nil {
 		return errors.Wrap(err, "cannot load logger")
 	}
