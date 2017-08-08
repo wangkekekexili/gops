@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	targetPS4Regex = regexp.MustCompile(`(.+)( \(PlayStation 4\)| - PlayStation 4)$`)
+	targetPS4Regex = regexp.MustCompile(`(.+)( \(PlayStation 4\)| - PlayStation 4|Playstation 4)$`)
 )
 
 type TargetHandler struct {
