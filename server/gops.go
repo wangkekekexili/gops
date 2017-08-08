@@ -86,22 +86,9 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 
 	// Get existing games.
 	var existingGames []*model.Game
-	rows, err := s.DB.Query(`SELECT * FROM game WHERE name IN `+util.QuestionMarks(len(gameNames)), gameNames...)
+	err = s.DB.Select(&existingGames, `SELECT * FROM game WHERE name IN `+util.QuestionMarks(len(gameNames)), gameNames...)
 	if err != nil {
 		return err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var g model.Game
-		err = rows.Scan(&g.ID, &g.Name, &g.Condition, &g.Source)
-		if err != nil {
-			return err
-		}
-		existingGames = append(existingGames, &g)
-	}
-	rows.Close()
-	if rows.Err() != nil {
-		return rows.Err()
 	}
 
 	existingGamesByKey := make(map[string]*model.Game)
@@ -116,8 +103,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 		if existingGame, hasExistingEntry := existingGamesByKey[game.GetKey()]; hasExistingEntry {
 			// Get the last price for the game.
 			var lastPrice float64
-			err = s.DB.QueryRow(`SELECT value FROM price WHERE game_id = ? ORDER BY timestamp desc`, existingGame.ID).
-				Scan(&lastPrice)
+			err = s.DB.Get(&lastPrice, `SELECT value FROM price WHERE game_id = ? ORDER BY timestamp desc`, existingGame.ID)
 			if err != nil {
 				return err
 			}
