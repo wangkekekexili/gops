@@ -135,7 +135,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 		} else {
 			// It's new game.
 			numNewGames++
-			result, err := s.DB.Exec(`INSERT INTO game (name, condition, source) VALUES `+util.QuestionMarks(3),
+			result, err := s.DB.Exec("INSERT INTO game (`name`, `condition`, `source`) VALUES "+util.QuestionMarks(3),
 				game.Name, game.Condition, game.Source)
 			if err != nil {
 				return err
