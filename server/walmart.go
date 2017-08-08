@@ -21,7 +21,7 @@ const (
 
 var (
 	// Name like "Need for Speed: Rivals (PS4)" indicates it's a new game.
-	walmartNewProductRegex = regexp.MustCompile(`(.+) \(PS4\)$`)
+	walmartNewProductRegex = regexp.MustCompile(`(.+)( \(PS4\)| \(PlayStation 4\))$`)
 	// Name like "Metal Gear Solid V: The Phantom Pain (PS4) - Pre-Owned" indicates it's a pre-owned game.
 	walmartPreownedProductRegex = regexp.MustCompile(`(.+) (- Pre-Owned \(PS4\)|\(PS4\) - Pre-Owned)$`)
 )
@@ -116,7 +116,7 @@ func (w *WalmartHandler) extractNameAndCondition(s string) (string, string, bool
 		return matches[1], model.ProductConditionPreowned, true
 	}
 	matches = walmartNewProductRegex.FindStringSubmatch(s)
-	if len(matches) == 2 {
+	if len(matches) == 3 {
 		return matches[1], model.ProductConditionNew, true
 	}
 	return "", "", false

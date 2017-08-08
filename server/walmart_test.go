@@ -13,25 +13,36 @@ func TestWalmartHandler_extractNameAndCondition(t *testing.T) {
 		ok        bool
 		name      string
 		condition string
-	}{{
-		fullname: "PlayStation 4 Slim 500GB Uncharted 4 Bundle",
-		ok:       false,
-	}, {
-		fullname:  "Minecraft (PS4)",
-		ok:        true,
-		name:      "Minecraft",
-		condition: model.ProductConditionNew,
-	}, {
-		fullname:  "Watch Dogs (PS4) - Pre-Owned",
-		ok:        true,
-		name:      "Watch Dogs",
-		condition: model.ProductConditionPreowned,
-	}, {
-		fullname:  "Tom Clancy's The Division - Pre-Owned (PS4)",
-		ok:        true,
-		name:      "Tom Clancy's The Division",
-		condition: model.ProductConditionPreowned,
-	}}
+	}{
+		{
+			fullname: "PlayStation 4 Slim 500GB Uncharted 4 Bundle",
+			ok:       false,
+		},
+		{
+			fullname:  "Overwatch Game of the Year Edition (PlayStation 4)",
+			ok:        true,
+			name:      "Overwatch Game of the Year Edition",
+			condition: model.ProductConditionNew,
+		},
+		{
+			fullname:  "Minecraft (PS4)",
+			ok:        true,
+			name:      "Minecraft",
+			condition: model.ProductConditionNew,
+		},
+		{
+			fullname:  "Watch Dogs (PS4) - Pre-Owned",
+			ok:        true,
+			name:      "Watch Dogs",
+			condition: model.ProductConditionPreowned,
+		},
+		{
+			fullname:  "Tom Clancy's The Division - Pre-Owned (PS4)",
+			ok:        true,
+			name:      "Tom Clancy's The Division",
+			condition: model.ProductConditionPreowned,
+		},
+	}
 	for _, test := range tests {
 		nameGot, conditionGot, okGot := w.extractNameAndCondition(test.fullname)
 		if test.ok && !okGot {
