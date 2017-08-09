@@ -103,7 +103,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 		if existingGame, hasExistingEntry := existingGamesByKey[game.GetKey()]; hasExistingEntry {
 			// Get the last price for the game.
 			var lastPrice float64
-			err = s.DB.Get(&lastPrice, `SELECT value FROM price WHERE game_id = ? ORDER BY timestamp desc`, existingGame.ID)
+			err = s.DB.Get(&lastPrice, "SELECT value FROM price WHERE game_id = ? ORDER BY timestamp desc", existingGame.ID)
 			if err != nil {
 				return err
 			}
@@ -114,7 +114,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 			// New price point.
 			numPriceUpdate++
 			price.GameID = existingGame.ID
-			_, err = s.DB.Exec(`INSERT INTO price (game_id, value) VALUES `+util.QuestionMarks(2), existingGame.ID, price.Value)
+			_, err = s.DB.Exec("INSERT INTO price (`game_id`, `value`) VALUES "+util.QuestionMarks(2), existingGame.ID, price.Value)
 			if err != nil {
 				return err
 			}
@@ -130,7 +130,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 			if err != nil {
 				return err
 			}
-			_, err = s.DB.Exec(`INSERT INTO price (game_id, values) VALUES `+util.QuestionMarks(2), gameID, price.Value)
+			_, err = s.DB.Exec("INSERT INTO price (`game_id`, `values`) VALUES "+util.QuestionMarks(2), gameID, price.Value)
 			if err != nil {
 				return err
 			}
