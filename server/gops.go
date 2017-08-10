@@ -70,6 +70,11 @@ func (s *GOPS) Start() error {
 func (s *GOPS) handleGames(handler GameHandler) error {
 	logger := s.Logger.With(zap.String("source", handler.GetSource()))
 	logger.Info("start processing")
+	tx, err := s.DB.Beginx()
+	if err != nil {
+		return errors.Wrap(err, "begin tx")
+	}
+	defer tx.Rollback()
 
 	gamesWithPrice, err := handler.GetGames()
 	if err != nil {
@@ -86,7 +91,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 
 	// Get existing games.
 	var existingGames []*model.Game
-	err = s.DB.Select(&existingGames, `SELECT * FROM game WHERE name IN `+util.QuestionMarks(len(gameNames)), gameNames...)
+	err = tx.Select(&existingGames, `SELECT * FROM game WHERE name IN `+util.QuestionMarks(len(gameNames)), gameNames...)
 	if err != nil {
 		return errors.Wrapf(err, "get existing games failed with game names: %v", gameNames)
 	}
@@ -103,7 +108,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 		if existingGame, hasExistingEntry := existingGamesByKey[game.GetKey()]; hasExistingEntry {
 			// Get the last price for the game.
 			var lastPrice float64
-			err = s.DB.Get(&lastPrice, "SELECT value FROM price WHERE game_id = ? ORDER BY timestamp desc", existingGame.ID)
+			err = tx.Get(&lastPrice, "SELECT value FROM price WHERE game_id = ? ORDER BY timestamp desc", existingGame.ID)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get last price for game %v", game)
 			}
@@ -114,14 +119,14 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 			// New price point.
 			numPriceUpdate++
 			price.GameID = existingGame.ID
-			_, err = s.DB.Exec("INSERT INTO price (`game_id`, `value`) VALUES (?,?)", existingGame.ID, price.Value)
+			_, err = tx.Exec("INSERT INTO price (`game_id`, `value`) VALUES (?,?)", existingGame.ID, price.Value)
 			if err != nil {
 				return errors.Wrapf(err, "error inserting price with game_id %v value %v", existingGame.ID, price.Value)
 			}
 		} else {
 			// It's new game.
 			numNewGames++
-			result, err := s.DB.Exec("INSERT INTO game (`name`, `condition`, `source`) VALUES (?,?,?)",
+			result, err := tx.Exec("INSERT INTO game (`name`, `condition`, `source`) VALUES (?,?,?)",
 				game.Name, game.Condition, game.Source)
 			if err != nil {
 				return errors.Wrapf(err, "error inserting game %v", game)
@@ -130,7 +135,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 			if err != nil {
 				return errors.Wrap(err, "LastInsertId")
 			}
-			_, err = s.DB.Exec("INSERT INTO price (`game_id`, `value`) VALUES (?,?)", gameID, price.Value)
+			_, err = tx.Exec("INSERT INTO price (`game_id`, `value`) VALUES (?,?)", gameID, price.Value)
 			if err != nil {
 				return errors.Wrapf(err, "error inserting price with game_id %v value %v", gameID, price.Value)
 			}
@@ -140,5 +145,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 	logger.Info("price updated", zap.Int("count", numPriceUpdate))
 	logger.Info("new games inserted", zap.Int("count", numNewGames))
 	logger.Info("end")
+
+	tx.Commit()
 	return nil
 }
