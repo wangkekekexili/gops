@@ -28,6 +28,10 @@ func (g *Game) GetKey() string {
 	return fmt.Sprintf("%v\x00%v\x00%v", strings.ToLower(g.Name), g.Condition, g.Source)
 }
 
+func (g *Game) Stringer() string {
+	return fmt.Sprintf("%v: %v %v from %v", g.ID, g.Condition, g.Name, g.Source)
+}
+
 // Price represents data in price table.
 type Price struct {
 	ID        int

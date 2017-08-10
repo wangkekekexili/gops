@@ -73,7 +73,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 
 	gamesWithPrice, err := handler.GetGames()
 	if err != nil {
-		return err
+		return errors.WithMessage(err, "get games failed")
 	}
 	logger.Info("successfully get games", zap.Int("count", len(gamesWithPrice)))
 	if len(gamesWithPrice) == 0 {
@@ -88,7 +88,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 	var existingGames []*model.Game
 	err = s.DB.Select(&existingGames, `SELECT * FROM game WHERE name IN `+util.QuestionMarks(len(gameNames)), gameNames...)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "get existing games failed with game names: %v", gameNames)
 	}
 
 	existingGamesByKey := make(map[string]*model.Game)
@@ -105,7 +105,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 			var lastPrice float64
 			err = s.DB.Get(&lastPrice, "SELECT value FROM price WHERE game_id = ? ORDER BY timestamp desc", existingGame.ID)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to get last price for game %v", game)
 			}
 			if price.Value == lastPrice {
 				continue
@@ -114,25 +114,25 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 			// New price point.
 			numPriceUpdate++
 			price.GameID = existingGame.ID
-			_, err = s.DB.Exec("INSERT INTO price (`game_id`, `value`) VALUES "+util.QuestionMarks(2), existingGame.ID, price.Value)
+			_, err = s.DB.Exec("INSERT INTO price (`game_id`, `value`) VALUES (?,?)", existingGame.ID, price.Value)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "error inserting price with game_id %v value %v", existingGame.ID, price.Value)
 			}
 		} else {
 			// It's new game.
 			numNewGames++
-			result, err := s.DB.Exec("INSERT INTO game (`name`, `condition`, `source`) VALUES "+util.QuestionMarks(3),
+			result, err := s.DB.Exec("INSERT INTO game (`name`, `condition`, `source`) VALUES (?,?,?)",
 				game.Name, game.Condition, game.Source)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "error inserting game %v", game)
 			}
 			gameID, err := result.LastInsertId()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "LastInsertId")
 			}
-			_, err = s.DB.Exec("INSERT INTO price (`game_id`, `values`) VALUES "+util.QuestionMarks(2), gameID, price.Value)
+			_, err = s.DB.Exec("INSERT INTO price (`game_id`, `value`) VALUES (?,?)", gameID, price.Value)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "error inserting price with game_id %v value %v", gameID, price.Value)
 			}
 		}
 	}
