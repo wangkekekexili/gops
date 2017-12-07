@@ -1,14 +1,12 @@
-package server_test
+package server
 
 import (
 	"os"
 	"testing"
-
-	"github.com/wangkekekexili/gops/server"
 )
 
 func TestConfig(t *testing.T) {
-	c := &server.Config{}
+	c := Config{}
 	err := c.Load()
 	if err == nil {
 		t.Fatal("expect error when required values are not present")
@@ -16,7 +14,7 @@ func TestConfig(t *testing.T) {
 
 	os.Setenv("MYSQL_DSN", "mysql")
 	os.Setenv("SENTRY_DSN", "sentry")
-	c = &server.Config{}
+	c = Config{}
 	err = c.Load()
 	if err != nil {
 		t.Fatal(err)
