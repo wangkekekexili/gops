@@ -8,11 +8,18 @@ import (
 
 type DB struct {
 	Config *Config
+	Till   *Till
 
 	*sqlx.DB
 }
 
-func (db *DB) Load() error {
+func (db *DB) Load() (err error) {
+	defer func() {
+		if err != nil {
+			db.Till.Notify(err)
+		}
+	}()
+
 	if db.Config == nil || db.Config.MysqlDSN == "" {
 		return errors.New("cannot load db")
 	}
