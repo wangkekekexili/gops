@@ -3,11 +3,12 @@ package server
 import (
 	"github.com/getsentry/raven-go"
 	"github.com/pkg/errors"
+	"github.com/wangkekekexili/gops/till"
 )
 
 type Reporter struct {
 	Config *Config
-	Till   *Till
+	Till   *till.Module
 }
 
 func (r *Reporter) Load() error {

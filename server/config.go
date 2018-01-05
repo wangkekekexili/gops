@@ -2,17 +2,15 @@ package server
 
 import (
 	"os"
-	"strings"
 	"reflect"
+	"strings"
 
 	"github.com/pkg/errors"
 )
 
 type Config struct {
-	MysqlDSN   string `env:"MYSQL_DSN,required"`
-	SentryDSN  string `env:"SENTRY_DSN,required"`
-	TillURL    string `env:"TILL_URL"`
-	TillTarget string `env:"TILL_TARGET"`
+	MysqlDSN  string `env:"MYSQL_DSN,required"`
+	SentryDSN string `env:"SENTRY_DSN,required"`
 }
 
 func (c *Config) Load() error {

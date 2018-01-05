@@ -4,11 +4,12 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"github.com/wangkekekexili/gops/till"
 )
 
 type DB struct {
 	Config *Config
-	Till   *Till
+	Till   *till.Module
 
 	*sqlx.DB
 }

@@ -1,26 +1,21 @@
-package server
+package till
 
 import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"os"
 )
 
-type Till struct {
-	Config *Config
-
+type Module struct {
 	ok bool
 
-	url   string
-	phone string
+	url, phone string
 }
 
-func (t *Till) Load() error {
-	if t.Config == nil {
-		return nil
-	}
-	t.url = t.Config.TillURL
-	t.phone = t.Config.TillTarget
+func (t *Module) Load() error {
+	t.url = os.Getenv("TILL_URL")
+	t.phone = os.Getenv("TILL_TARGET")
 	if t.url == "" || t.phone == "" {
 		return nil
 	}
@@ -28,7 +23,7 @@ func (t *Till) Load() error {
 	return nil
 }
 
-func (t *Till) Notify(err error) {
+func (t *Module) Notify(err error) {
 	if !t.ok {
 		return
 	}
@@ -43,3 +38,4 @@ func (t *Till) Notify(err error) {
 	reader := bytes.NewReader(reqBytes)
 	http.Post(t.url, "application/json", reader)
 }
+
