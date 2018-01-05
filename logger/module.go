@@ -8,7 +8,7 @@ import (
 )
 
 type Module struct {
-	*zap.Logger
+	logger *zap.Logger
 }
 
 func (m *Module) Load() error {
@@ -16,18 +16,18 @@ func (m *Module) Load() error {
 	if err != nil {
 		return fmt.Errorf("cannot load logger: %v", err)
 	}
-	m.Logger = temp
+	m.logger = temp
 	return nil
 }
 
 func (m *Module) Err(s string, fields ...zapcore.Field) {
-	m.Error(s, fields...)
+	m.logger.Error(s, fields...)
 }
 
 func (m *Module) Info(s string, fields ...zapcore.Field) {
-	m.Info(s, fields...)
+	m.logger.Info(s, fields...)
 }
 
 func (m *Module) With(fields ...zapcore.Field) *Module {
-	return &Module{Logger: m.With(fields...).Logger}
+	return &Module{logger: m.logger.With(fields...)}
 }
