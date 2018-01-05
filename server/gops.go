@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
+	"github.com/wangkekekexili/gops/db"
 	"github.com/wangkekekexili/gops/model"
 	"github.com/wangkekekexili/gops/reporter"
 	"github.com/wangkekekexili/gops/util"
@@ -14,7 +15,7 @@ import (
 )
 
 type GOPS struct {
-	DB       *DB
+	DB       *db.Module
 	Logger   *Logger
 	Reporter *reporter.Module
 
