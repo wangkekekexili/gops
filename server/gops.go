@@ -10,6 +10,7 @@ import (
 	"github.com/wangkekekexili/gops/db"
 	"github.com/wangkekekexili/gops/logger"
 	"github.com/wangkekekexili/gops/model"
+	"github.com/wangkekekexili/gops/pub"
 	"github.com/wangkekekexili/gops/reporter"
 	"go.uber.org/zap"
 )
@@ -18,6 +19,7 @@ type GOPS struct {
 	DB       *db.Module
 	Logger   *logger.Module
 	Reporter *reporter.Module
+	Pub      *pub.Module
 
 	Gamestop *GamestopHandler
 	Target   *TargetHandler
@@ -125,6 +127,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 			if err != nil {
 				return errors.Wrapf(err, "error inserting price with game_id %v value %v", existingGame.ID, price.Value)
 			}
+			s.Pub.Pub(game.Name, price.Value)
 		} else {
 			// It's new game.
 			numNewGames++
@@ -141,6 +144,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 			if err != nil {
 				return errors.Wrapf(err, "error inserting price with game_id %v value %v", gameID, price.Value)
 			}
+			s.Pub.Pub(game.Name, price.Value)
 		}
 	}
 
