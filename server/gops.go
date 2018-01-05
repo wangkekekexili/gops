@@ -8,6 +8,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
 	"github.com/wangkekekexili/gops/model"
+	"github.com/wangkekekexili/gops/reporter"
 	"github.com/wangkekekexili/gops/util"
 	"go.uber.org/zap"
 )
@@ -15,7 +16,7 @@ import (
 type GOPS struct {
 	DB       *DB
 	Logger   *Logger
-	Reporter *Reporter
+	Reporter *reporter.Module
 
 	Gamestop *GamestopHandler
 	Target   *TargetHandler
