@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
+	"github.com/wangkekekexili/gops/logger"
 	"github.com/wangkekekexili/gops/model"
 	"go.uber.org/zap"
 )
@@ -23,7 +24,7 @@ var (
 )
 
 type TargetHandler struct {
-	Logger *Logger
+	Logger *logger.Module
 }
 
 func (t *TargetHandler) Load() error { return nil }

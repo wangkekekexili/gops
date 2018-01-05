@@ -9,6 +9,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/pkg/errors"
+	"github.com/wangkekekexili/gops/logger"
 	"github.com/wangkekekexili/gops/model"
 	"go.uber.org/zap"
 )
@@ -21,7 +22,7 @@ const (
 )
 
 type GamestopHandler struct {
-	Logger *Logger
+	Logger *logger.Module
 }
 
 func (g *GamestopHandler) Load() error { return nil }

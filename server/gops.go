@@ -8,15 +8,15 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
 	"github.com/wangkekekexili/gops/db"
+	"github.com/wangkekekexili/gops/logger"
 	"github.com/wangkekekexili/gops/model"
 	"github.com/wangkekekexili/gops/reporter"
-	"github.com/wangkekekexili/gops/util"
 	"go.uber.org/zap"
 )
 
 type GOPS struct {
 	DB       *db.Module
-	Logger   *Logger
+	Logger   *logger.Module
 	Reporter *reporter.Module
 
 	Gamestop *GamestopHandler
@@ -93,7 +93,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 
 	// Get existing games.
 	var existingGames []*model.Game
-	err = tx.Select(&existingGames, `SELECT * FROM game WHERE name IN `+util.QuestionMarks(len(gameNames)), gameNames...)
+	err = tx.Select(&existingGames, `SELECT * FROM game WHERE name IN `+db.QuestionMarks(len(gameNames)), gameNames...)
 	if err != nil {
 		return errors.Wrapf(err, "get existing games failed with game names: %v", gameNames)
 	}

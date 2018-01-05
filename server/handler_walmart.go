@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/wangkekekexili/gops/logger"
 	"github.com/wangkekekexili/gops/model"
 	"go.uber.org/zap"
 )
@@ -27,7 +28,7 @@ var (
 )
 
 type WalmartHandler struct {
-	Logger *Logger
+	Logger *logger.Module
 
 	ok     bool
 	params url.Values
