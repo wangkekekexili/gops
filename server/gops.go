@@ -123,7 +123,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 
 			// New price point.
 			numPriceUpdate++
-			err = s.insertNewPrice(tx, existingGame, price.Value)
+			err = s.updateCurrentPrice(tx, existingGame, price.Value)
 			if err != nil {
 				return errors.Wrap(err, "insert new price")
 			}
@@ -149,6 +149,24 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 	logger.Info("end")
 
 	tx.Commit()
+	return nil
+}
+
+func (s *GOPS) updateCurrentPrice(tx sqlx.Execer, game *model.Game, price float64) error {
+	result, err := tx.Exec("INSERT INTO "+tables.Prices+" (`game_id`, `value`) VALUES (?,?)", game.ID, price)
+	if err != nil {
+		return errors.Wrapf(err, "insert price with game_id %v value %v", game.ID, price)
+	}
+	priceID, err := result.LastInsertId()
+	if err != nil {
+		return errors.Wrap(err, "lastInsertId")
+	}
+	_, err = tx.Exec("UPDATE "+tables.CurrentPrices+" SET price_id =?, value = ? WHERE game_id = ?", priceID, price, game.ID)
+	if err != nil {
+		return errors.Wrapf(err, "insert into current_prices with game id %v price id %v", game.ID, priceID)
+	}
+
+	s.Pub.Pub(game.Name, price)
 	return nil
 }
 
