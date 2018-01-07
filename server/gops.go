@@ -5,6 +5,7 @@ import (
 	"runtime/debug"
 	"sync"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/wangkekekexili/gops/db"
 	"github.com/wangkekekexili/gops/logger"
@@ -112,7 +113,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 		if existingGame, hasExistingEntry := existingGamesByKey[game.GetKey()]; hasExistingEntry {
 			// Get the last price for the game.
 			var lastPrice float64
-			err = tx.Get(&lastPrice, "SELECT value FROM "+tables.Prices+" WHERE game_id = ? ORDER BY timestamp desc", existingGame.ID)
+			err = tx.Get(&lastPrice, "SELECT value FROM "+tables.CurrentPrices+" WHERE game_id = ?", existingGame.ID)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get last price for game %v", game)
 			}
@@ -122,12 +123,10 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 
 			// New price point.
 			numPriceUpdate++
-			price.GameID = existingGame.ID
-			_, err = tx.Exec("INSERT INTO "+tables.Prices+" (`game_id`, `value`) VALUES (?,?)", existingGame.ID, price.Value)
+			err = s.insertNewPrice(tx, existingGame, price.Value)
 			if err != nil {
-				return errors.Wrapf(err, "error inserting price with game_id %v value %v", existingGame.ID, price.Value)
+				return errors.Wrap(err, "insert new price")
 			}
-			s.Pub.Pub(game.Name, price.Value)
 		} else {
 			// It's new game.
 			numNewGames++
@@ -140,11 +139,8 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 			if err != nil {
 				return errors.Wrap(err, "LastInsertId")
 			}
-			_, err = tx.Exec("INSERT INTO "+tables.Games+" (`game_id`, `value`) VALUES (?,?)", gameID, price.Value)
-			if err != nil {
-				return errors.Wrapf(err, "error inserting price with game_id %v value %v", gameID, price.Value)
-			}
-			s.Pub.Pub(game.Name, price.Value)
+			game.ID = int(gameID)
+			err = s.insertNewPrice(tx, game, price.Value)
 		}
 	}
 
@@ -153,5 +149,23 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 	logger.Info("end")
 
 	tx.Commit()
+	return nil
+}
+
+func (s *GOPS) insertNewPrice(tx sqlx.Execer, game *model.Game, price float64) error {
+	result, err := tx.Exec("INSERT INTO "+tables.Prices+" (`game_id`, `value`) VALUES (?,?)", game.ID, price)
+	if err != nil {
+		return errors.Wrapf(err, "insert price with game_id %v value %v", game.ID, price)
+	}
+	priceID, err := result.LastInsertId()
+	if err != nil {
+		return errors.Wrap(err, "lastInsertId")
+	}
+	_, err = tx.Exec("INSERT INTO "+tables.CurrentPrices+" (`game_id`, `price_id`, `value`) VALUES (?,?,?)", game.ID, priceID, price)
+	if err != nil {
+		return errors.Wrapf(err, "insert into current_prices with game id %v price id %v", game.ID, priceID)
+	}
+
+	s.Pub.Pub(game.Name, price)
 	return nil
 }
