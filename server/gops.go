@@ -100,7 +100,7 @@ func (s *GOPS) handleGames(handler GameHandler) error {
 		return errors.Wrapf(err, "get existing games failed with game names: %v", gameNames)
 	}
 
-	existingGamesByKey := make(map[string]*model.Game)
+	existingGamesByKey := make(map[model.GameKey]*model.Game)
 	for i, game := range existingGames {
 		existingGamesByKey[game.GetKey()] = existingGames[i]
 	}

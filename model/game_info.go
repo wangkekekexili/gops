@@ -23,9 +23,11 @@ type Game struct {
 	Source    string
 }
 
+type GameKey string
+
 // GetKey returns a key that uniquely identifies a game.
-func (g *Game) GetKey() string {
-	return fmt.Sprintf("%v\x00%v\x00%v", strings.ToLower(g.Name), g.Condition, g.Source)
+func (g *Game) GetKey() GameKey {
+	return GameKey(fmt.Sprintf("%v\x00%v\x00%v", strings.ToLower(g.Name), g.Condition, g.Source))
 }
 
 func (g *Game) Stringer() string {
