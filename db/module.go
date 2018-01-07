@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/wangkekekexili/gops/till"
 )

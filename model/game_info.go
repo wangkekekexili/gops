@@ -34,18 +34,10 @@ func (g *Game) Stringer() string {
 
 // Price represents data in price table.
 type Price struct {
-	ID        int
-	GameID    int
-	Value     float64
-	Timestamp time.Time
-}
-
-func NewPrice(gameID int, value float64) *Price {
-	return &Price{
-		GameID:    gameID,
-		Value:     value,
-		Timestamp: time.Now(),
-	}
+	ID        int       `db:"id"`
+	GameID    int       `db:"game_id"`
+	Value     float64   `db:"value"`
+	Timestamp time.Time `db:"timestamp"`
 }
 
 // GamePrice represents a combination of game and price data, without concerning unrelated database columns.

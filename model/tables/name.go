@@ -1,7 +1,7 @@
 package tables
 
 const (
-	Game         = "game"
-	Price        = "price"
-	CurrentPrice = "current_price"
+	Games         = "games"
+	Prices        = "prices"
+	CurrentPrices = "current_prices"
 )
