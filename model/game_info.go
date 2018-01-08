@@ -23,11 +23,19 @@ type Game struct {
 	Source    string `db:"source"`
 }
 
-type GameKey string
+type GameKey struct {
+	Name      string
+	Condition string
+	Source    string
+}
 
 // GetKey returns a key that uniquely identifies a game.
 func (g *Game) GetKey() GameKey {
-	return GameKey(fmt.Sprintf("%v\x00%v\x00%v", strings.ToLower(g.Name), g.Condition, g.Source))
+	return GameKey{
+		Name:      strings.ToLower(g.Name),
+		Condition: g.Condition,
+		Source:    g.Source,
+	}
 }
 
 func (g *Game) Stringer() string {
