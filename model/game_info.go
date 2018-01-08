@@ -17,10 +17,10 @@ const (
 
 // Game represents data in game table.
 type Game struct {
-	ID        int
-	Name      string
-	Condition string
-	Source    string
+	ID        int    `db:"id"`
+	Name      string `db:"name"`
+	Condition string `db:"condition"`
+	Source    string `db:"source"`
 }
 
 type GameKey string
